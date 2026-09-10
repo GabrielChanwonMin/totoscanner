@@ -200,6 +200,23 @@ details summary:hover{color:var(--accent-ink)}
 .tile .v.pos{color:var(--good)}.tile .v.neg{color:var(--bad)}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);
   color:var(--bg);padding:9px 16px;border-radius:4px;font-size:12.5px;z-index:100;box-shadow:var(--shadow)}
+/* 로그인 게이트 */
+#gate{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;
+  align-items:center;justify-content:center;padding:22px;overflow:auto}
+#gate .box{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r);box-shadow:var(--shadow);padding:26px 24px}
+#gate .brand{display:flex;align-items:baseline;gap:9px;margin-bottom:6px}
+#gate .brand b{font-size:19px;font-weight:700;letter-spacing:-.02em}
+#gate h3{font-size:14px;font-weight:600;margin:18px 0 10px}
+#gate .f{margin-bottom:11px}
+#gate .msg{font-size:12.5px;line-height:1.6;margin:12px 0 0;padding:10px 12px;border-radius:4px}
+#gate .msg.err{background:var(--bad-soft);color:var(--bad);border:1px solid var(--bad)}
+#gate .msg.ok{background:var(--good-soft);color:var(--good);border:1px solid var(--good)}
+#gate .msg.wait{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}
+#gate .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:16px 0 4px}
+#gate .tabs button{flex:1;background:none;border:0;border-bottom:2px solid transparent;
+  padding:9px;cursor:pointer;color:var(--muted);font-weight:500;font-size:13px}
+#gate .tabs button[aria-pressed="true"]{color:var(--accent-ink);border-bottom-color:var(--accent);font-weight:600}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 /* 좁은 화면: 배당을 아래 줄로 내려 팀명에 폭을 준다 (반드시 스타일시트 최후단) */
 @media(max-width:560px){
@@ -212,6 +229,27 @@ details summary:hover{color:var(--accent-ink)}
 }
 </style>
 
+<div id="gate" hidden>
+  <div class="box">
+    <div class="brand"><b>토토스캐너</b><span class="tag">PROTO VALUE SCANNER</span></div>
+    <p class="note" style="margin:0">승인된 사람만 볼 수 있다.</p>
+    <div class="tabs">
+      <button data-mode="login" aria-pressed="true">로그인</button>
+      <button data-mode="signup" aria-pressed="false">가입 신청</button>
+    </div>
+    <form id="gateForm" autocomplete="on">
+      <div class="f" id="gName" hidden><label class="lbl" for="gN">이름</label>
+        <input id="gN" autocomplete="name" placeholder="친구가 알아볼 이름"></div>
+      <div class="f"><label class="lbl" for="gE">이메일</label>
+        <input id="gE" type="email" autocomplete="email" required></div>
+      <div class="f"><label class="lbl" for="gP">비밀번호</label>
+        <input id="gP" type="password" autocomplete="current-password" required minlength="6"></div>
+      <button class="btn pri" id="gGo" style="width:100%;padding:10px" type="submit">로그인</button>
+    </form>
+    <div id="gMsg"></div>
+  </div>
+</div>
+
 <header>
   <div class="hd">
     <div class="brand"><b>토토스캐너</b><span class="tag">Proto Value Scanner</span></div>
@@ -221,6 +259,9 @@ details summary:hover{color:var(--accent-ink)}
       <div class="m"><span class="lbl">베트맨 마진</span><span id="mOver">—</span></div>
       <div class="m"><span class="lbl">가치 픽</span><span id="mVal">0</span></div>
       <div class="m"><span class="lbl">데이터</span><span id="mSrc" style="font-size:11px">로컬</span></div>
+      <div class="m" id="whoBox" hidden><span class="lbl">로그인</span>
+        <span style="font-size:11px"><span id="whoName"></span>
+        <button class="btn sm" id="signOut" style="padding:1px 6px;font-size:10px;margin-left:4px">나가기</button></span></div>
     </div>
   </div>
   <div class="mow"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -230,6 +271,7 @@ details summary:hover{color:var(--accent-ink)}
     <button data-tab="combo">조합 추천</button>
     <button data-tab="log">기록 · 정산</button>
     <button data-tab="method">방법론 · 검증</button>
+    <button data-tab="admin" id="tabAdmin" hidden>회원 관리</button>
   </nav>
 </header>
 
@@ -367,6 +409,17 @@ details summary:hover{color:var(--accent-ink)}
 
 <!-- ══════════ 방법론 ══════════ -->
 <section class="panel" id="p-method"><div id="methodOut"></div></section>
+
+<section class="panel" id="p-admin">
+  <div class="card" style="max-width:720px">
+    <h2>가입 신청 · 회원 <span class="lbl">주인만 보인다</span></h2>
+    <div id="adminList"></div>
+    <div class="pad" style="border-top:1px solid var(--line2)">
+      <p class="note" style="margin:0">승인하면 그 사람은 회차 데이터와 픽 기록을 볼 수 있다.
+      반려하면 로그인은 되지만 아무것도 안 보인다. 언제든 되돌릴 수 있다.</p>
+    </div>
+  </div>
+</section>
 </main>
 
 <script>
@@ -1175,15 +1228,142 @@ const LKEY='ts_picks_v1';
 const SBCFG = (typeof window!=='undefined' && window.TS_CONFIG) || {};
 function sbReady(){ return !!(SBCFG.supabaseUrl && SBCFG.supabaseKey
   && !/YOUR_|여기에/.test(SBCFG.supabaseUrl+SBCFG.supabaseKey)); }
-async function sbFetch(path, opts){
-  const url = SBCFG.supabaseUrl.replace(/\/$/,'') + '/rest/v1/' + path;
-  const r = await fetch(url, {...opts, headers:{
-    'apikey':SBCFG.supabaseKey, 'Authorization':'Bearer '+SBCFG.supabaseKey,
+const SBURL = ()=> SBCFG.supabaseUrl.replace(/\/$/,'');
+
+/* ── 세션 ── */
+const SKEY='ts_session_v1';
+let SESSION=null, ME=null;
+function loadSession(){ try{ SESSION=JSON.parse(localStorage.getItem(SKEY)||'null'); }catch(e){ SESSION=null; } }
+function saveSession(s){ SESSION=s;
+  try{ s? localStorage.setItem(SKEY, JSON.stringify(s)) : localStorage.removeItem(SKEY); }catch(e){} }
+const authHeader = ()=> 'Bearer ' + ((SESSION && SESSION.access_token) || SBCFG.supabaseKey);
+
+async function sbAuth(path, body, method){
+  const r = await fetch(SBURL()+'/auth/v1/'+path, {method:method||'POST',
+    headers:{'apikey':SBCFG.supabaseKey, 'Content-Type':'application/json',
+             ...(SESSION&&SESSION.access_token?{'Authorization':'Bearer '+SESSION.access_token}:{})},
+    body: body? JSON.stringify(body):undefined});
+  const t = await r.text(); let d=null; try{ d=t?JSON.parse(t):null; }catch(e){}
+  if(!r.ok) throw Object.assign(new Error((d&&(d.error_description||d.msg||d.message))||('오류 '+r.status)), {status:r.status, data:d});
+  return d;
+}
+async function sbFetch(path, opts, retry){
+  const r = await fetch(SBURL()+'/rest/v1/'+path, {...opts, headers:{
+    'apikey':SBCFG.supabaseKey, 'Authorization':authHeader(),
     'Content-Type':'application/json', 'Prefer':'return=representation',
     ...(opts&&opts.headers||{})}});
-  if(!r.ok) throw new Error('supabase '+r.status+' '+(await r.text()).slice(0,120));
+  if(r.status===401 && !retry && SESSION && SESSION.refresh_token){
+    try{ const s = await sbAuth('token?grant_type=refresh_token', {refresh_token:SESSION.refresh_token});
+         saveSession(s); return sbFetch(path, opts, true); }catch(e){ saveSession(null); }
+  }
+  if(!r.ok) throw new Error('supabase '+r.status+' '+(await r.text()).slice(0,140));
   const t = await r.text();
   return t ? JSON.parse(t) : null;
+}
+
+/* ── 로그인 게이트 ── */
+function gateMsg(txt, kind){ $('#gMsg').innerHTML = txt? '<p class="msg '+(kind||'')+'">'+txt+'</p>' : ''; }
+function showGate(on){ $('#gate').hidden = !on; document.body.style.overflow = on?'hidden':''; }
+
+async function fetchMe(){
+  const rows = await sbFetch('profiles?select=*&id=eq.'+SESSION.user.id);
+  return (rows&&rows[0])||null;
+}
+async function afterLogin(){
+  try{ ME = await fetchMe(); }catch(e){ ME=null; }
+  if(!ME){
+    gateMsg('프로필을 찾지 못했다. SQL 이 제대로 실행됐는지 확인해라.', 'err'); return false;
+  }
+  if(!ME.approved){
+    gateMsg('<b>승인 대기 중이다.</b><br>' +
+      (ME.name?ME.name+' · ':'') + (ME.email||'') +
+      '<br>주인이 승인하면 바로 들어올 수 있다.', 'wait');
+    $('#gateForm').hidden = true;
+    $('#gate .tabs').hidden = true;
+    $('#gMsg').insertAdjacentHTML('beforeend',
+      '<button class="btn" id="gOut" style="width:100%;margin-top:10px">다른 계정으로</button>');
+    $('#gOut').onclick = ()=>{ saveSession(null); location.reload(); };
+    return false;
+  }
+  SB = true;
+  $('#whoBox').hidden = false;
+  $('#whoName').textContent = ME.name || (ME.email||'').split('@')[0];
+  $('#dbState').textContent = '공유 저장 (Supabase)';
+  if(ME.role==='owner'){ $('#tabAdmin').hidden = false; }
+  showGate(false);
+  if(typeof boot==='function') boot();
+  return true;
+}
+
+function initGate(){
+  let mode='login';
+  const setMode = m=>{ mode=m;
+    $$('#gate .tabs button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.mode===m)));
+    $('#gName').hidden = m!=='signup';
+    $('#gGo').textContent = m==='login'?'로그인':'가입 신청';
+    $('#gP').setAttribute('autocomplete', m==='login'?'current-password':'new-password');
+    gateMsg(''); };
+  $$('#gate .tabs button').forEach(b=> b.onclick=()=>setMode(b.dataset.mode));
+  $('#gateForm').onsubmit = async e=>{
+    e.preventDefault();
+    const email=$('#gE').value.trim(), pw=$('#gP').value, name=$('#gN').value.trim();
+    if(!email||!pw) return;
+    $('#gGo').disabled = true; gateMsg('처리 중…');
+    try{
+      if(mode==='signup'){
+        await sbAuth('signup', {email, password:pw, data:{name}});
+        try{ const s = await sbAuth('token?grant_type=password', {email, password:pw});
+             saveSession(s); await afterLogin(); }
+        catch(e2){ gateMsg('<b>가입 신청됐다.</b><br>주인이 승인하면 로그인할 수 있다.', 'ok'); }
+      } else {
+        const s = await sbAuth('token?grant_type=password', {email, password:pw});
+        saveSession(s); await afterLogin();
+      }
+    }catch(err){
+      const m = String(err.message||'');
+      gateMsg(/Failed to fetch|NetworkError|ERR_NAME/i.test(m)
+              ? '서버에 연결하지 못했다.<br>docs/config.js 의 <b>supabaseUrl</b> 이 맞는지, 인터넷이 되는지 확인해라.'
+            : /Invalid login/i.test(m) ? '이메일이나 비밀번호가 맞지 않는다.'
+            : /already registered|User already/i.test(m) ? '이미 가입된 이메일이다. 로그인 탭으로 가라.'
+            : /Email.*confirm|not confirmed/i.test(m) ? '이메일 확인이 켜져 있다.<br>Supabase › Authentication › Providers › Email 에서 <b>Confirm email</b> 을 꺼라.'
+            : /Password should be/i.test(m) ? '비밀번호는 6자 이상이어야 한다.'
+            : /signups not allowed|Signups not/i.test(m) ? '가입이 막혀 있다.<br>Supabase › Authentication › Sign In / Providers 에서 가입을 허용해라.'
+            : m, 'err');
+    }finally{ $('#gGo').disabled = false; }
+  };
+}
+
+/* ── 회원 관리 (주인 전용) ── */
+async function renderAdmin(){
+  const el=$('#adminList');
+  if(!ME || ME.role!=='owner'){ el.innerHTML='<div class="empty">권한이 없다.</div>'; return; }
+  let rows=[];
+  try{ rows = await sbFetch('profiles?select=*&order=created_at.desc') || []; }
+  catch(e){ el.innerHTML='<div class="empty">불러오지 못했다: '+e.message+'</div>'; return; }
+  if(!rows.length){ el.innerHTML='<div class="empty">아직 가입자가 없다.</div>'; return; }
+  el.innerHTML = '<div class="slip">' + rows.map(r=>{
+    const badge = r.role==='owner' ? '<span class="badge b-flag">주인</span>'
+      : r.approved ? '<span class="badge b-rec">승인됨</span>'
+      : '<span class="badge b-watch">대기 중</span>';
+    return '<div class="row" style="cursor:default">'+
+      '<div class="no">'+(r.approved?'●':'○')+'</div>'+
+      '<div class="tm"><div class="vs">'+(r.name||'(이름 없음)')+'</div>'+
+        '<div class="sub"><span>'+(r.email||'')+'</span>'+
+        '<span>'+String(r.created_at||'').slice(0,10)+'</span></div></div>'+
+      '<div class="oz">'+(r.role==='owner'?'':
+        '<button class="btn sm" data-uid="'+r.id+'" data-set="'+(r.approved?'0':'1')+'">'+
+        (r.approved?'승인 취소':'승인')+'</button>')+'</div>'+
+      '<div class="verdict">'+badge+'</div></div>';
+  }).join('') + '</div>';
+  el.querySelectorAll('[data-uid]').forEach(b=> b.onclick = async ()=>{
+    b.disabled=true;
+    try{
+      await sbFetch('profiles?id=eq.'+b.dataset.uid,
+        {method:'PATCH', body:JSON.stringify({approved: b.dataset.set==='1'})});
+      toast(b.dataset.set==='1'?'승인했다':'승인을 취소했다');
+      renderAdmin();
+    }catch(e){ toast('실패: '+e.message); b.disabled=false; }
+  });
 }
 const lsPicks = ()=>{ try{ return JSON.parse(localStorage.getItem(LKEY)||'[]'); }catch(e){ return []; } };
 const lsSet = a =>{ try{ localStorage.setItem(LKEY, JSON.stringify(a)); }catch(e){} };
@@ -1201,6 +1381,7 @@ async function loadPicks(){
 async function savePick(m,r){
   const b=r.best; if(!b||b.odds==null) return toast('배당이 없다');
   const rec = { id:'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    owner_id: (SESSION && SESSION.user && SESSION.user.id) || null,
     savedAt:new Date().toISOString(), round:ST.round||'',
     league:m.league, home:m.home, away:m.away, market:m.market, line:m.line,
     no:m.no, selIdx:b.i, sel:MARKETS[m.market].full[b.i],
@@ -1489,6 +1670,7 @@ function go(tab){
   $$('.panel').forEach(p=> p.classList.toggle('on', p.id==='p-'+tab));
   if(tab==='combo') runCombo();
   if(tab==='log') renderLog();
+  if(tab==='admin') renderAdmin();
   window.scrollTo({top:0,behavior:'instant'});
 }
 $$('nav button').forEach(b=> b.onclick=()=>go(b.dataset.tab));
@@ -1584,49 +1766,63 @@ async function pullRound(db){
   }catch(e){}
 }
 
-/* ── 시작: 저장소 연결 + 회차 데이터 자동 로딩 ── */
-(async()=>{
-  // ① Supabase (GitHub Pages 배포)
-  if(sbReady()){
-    try{ await sbFetch('picks?select=id&limit=1'); SB=true;
-         $('#dbState').textContent='공유 저장 (Supabase)';
-    }catch(e){ console.warn('Supabase 연결 실패 — 이 브라우저에만 저장한다.', e.message); }
-  }
-  // ② Claude Artifact db
-  if(!SB){
-    try{
-      const db = await claude.use('db');
-      if(db){ DB=db; $('#dbState').textContent='공유 저장 (Artifact)';
-        db.doc('rounds/current').onSnapshot(
-          snap=>{ if(snap && snap.exists){ ST.dbRound=snap.data(); showDbBanner(ST.dbRound); } },
-          ()=>{});
-        await pullRound(db);
-      }
-    }catch(e){}
-  }
-  if(!SB && !DB) $('#dbState').textContent='이 브라우저에만 저장';
-  await loadPicks(); renderLog();
+/* ── 시작: 인증 → 저장소 → 회차 데이터 ── */
+async function pullRoundSB(){
+  try{
+    const rows = await sbFetch('rounds?select=*&id=eq.current');
+    const row = rows && rows[0];
+    if(!row || !row.payload) return;
+    const doc = {...row.payload, round: row.round_no, gmTs: row.gm_ts,
+                 capturedAt: row.captured_at, saleEnd: row.sale_end};
+    ST.dbRound = doc;
+    $('#mSrc').textContent = '자동';
+    const label = (doc.round? doc.round+'회차':'회차') +
+      (doc.capturedAt? ' · '+String(doc.capturedAt).slice(5,16).replace('T',' ') : '');
+    const usable = (doc.matches||[]).filter(m=>m.betman && m.betman.every(x=>+x>1));
+    if(usable.length && ST.round !== label){
+      importCollectorJSON(JSON.stringify(doc)); render();
+      toast(label+' 자동으로 불러왔다 ('+usable.length+'행)');
+    } else showDbBanner(doc);
+  }catch(e){ console.warn('회차 불러오기 실패', e.message); }
+}
 
-  // ③ 같은 폴더의 data/latest.json — 수집기가 올려둔 이번 회차
+(async()=>{
+  $('#signOut').onclick = ()=>{ saveSession(null); location.reload(); };
+
+  if(sbReady()){
+    initGate(); loadSession();
+    let ok=false;
+    if(SESSION && SESSION.access_token){
+      try{ ok = await afterLogin(); }catch(e){ saveSession(null); }
+    }
+    if(!ok){ showGate(true); return; }        // 게이트에서 로그인하면 아래가 이어진다
+    await boot();
+    return;
+  }
+
+  // Supabase 설정이 없으면 예전처럼 동작한다 (Artifact / 로컬)
+  try{
+    const db = await claude.use('db');
+    if(db){ DB=db; $('#dbState').textContent='공유 저장 (Artifact)';
+      db.doc('rounds/current').onSnapshot(
+        snap=>{ if(snap && snap.exists){ ST.dbRound=snap.data(); showDbBanner(ST.dbRound); } }, ()=>{});
+      await pullRound(db);
+    }
+  }catch(e){}
+  if(!DB) $('#dbState').textContent='이 브라우저에만 저장';
+  await loadPicks(); renderLog();
   try{
     const r = await fetch('data/latest.json?t='+Date.now(), {cache:'no-store'});
-    if(r.ok){
-      const doc = await r.json();
-      ST.dbRound = doc;
-      $('#mSrc').textContent = '자동';
-      const label = (doc.round? doc.round+'회차':'회차') +
-        (doc.capturedAt? ' · '+String(doc.capturedAt).slice(5,16).replace('T',' ') : '');
-      const usable = (doc.matches||[]).filter(m=>m.betman && m.betman.every(x=>+x>1));
-      // 이미 그 회차를 보고 있지 않고, 쓸 수 있는 배당이 있으면 바로 띄운다
-      if(usable.length && ST.round !== label){
-        importCollectorJSON(JSON.stringify(doc)); render();
-        toast(label+' 자동으로 불러왔다 ('+usable.length+'행)');
-      } else {
-        showDbBanner(doc);
-      }
-    }
-  }catch(e){ /* Artifact 로 열었거나 파일이 없으면 조용히 넘어간다 */ }
+    if(r.ok){ const doc = await r.json();
+      if((doc.matches||[]).length){ ST.dbRound=doc; $('#mSrc').textContent='자동'; showDbBanner(doc); } }
+  }catch(e){}
 })();
+
+/* 로그인·승인이 끝난 뒤 실행되는 본 시작 */
+async function boot(){
+  await loadPicks(); renderLog();
+  await pullRoundSB();
+}
 </script>
 <style>
 @media(max-width:760px){ .calibwrap{grid-template-columns:1fr!important} }

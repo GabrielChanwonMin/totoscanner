@@ -2,6 +2,8 @@
 collector/snapshots/
 collector/logs/
 collector/latest_import.json
+collector/secrets.json
+docs/data/latest.json
 /data/
 __pycache__/
 .DS_Store
