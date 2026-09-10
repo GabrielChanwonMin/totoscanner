@@ -2,7 +2,7 @@
 collector/snapshots/
 collector/logs/
 collector/latest_import.json
-data/
+/data/
 __pycache__/
 .DS_Store
 .preview/
