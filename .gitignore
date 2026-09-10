@@ -1,0 +1,8 @@
+# 수집 원본 스냅샷 · 로그 · 학습용 CSV 는 저장소에 올리지 않는다
+collector/snapshots/
+collector/logs/
+collector/latest_import.json
+data/
+__pycache__/
+.DS_Store
+.preview/

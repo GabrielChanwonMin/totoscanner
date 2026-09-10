@@ -1,0 +1,1621 @@
+<title>토토스캐너</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#EDEFF2; --surface:#FFFFFF; --surface2:#F5F7F9; --raise:#FFFFFF;
+  --ink:#0D1117; --ink2:#2B343D; --muted:#5A6672; --faint:#8B97A3;
+  --line:#D7DBE0; --line2:#E6E9ED;
+  --accent:#2E43C9; --accent-soft:#E7EAFB; --accent-ink:#2E43C9;
+  --good:#0B7A46; --good-soft:#E2F2E9; --warn:#A66A00; --warn-soft:#FAF0DC;
+  --bad:#9B2C2C; --bad-soft:#F7E7E7; --stripe:rgba(13,17,23,.022);
+  --shadow:0 1px 2px rgba(13,17,23,.06),0 8px 24px -18px rgba(13,17,23,.35);
+  --r:5px;
+  --sans:"IBM Plex Sans KR",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B0F12; --surface:#141A20; --surface2:#1A2128; --raise:#1D242B;
+  --ink:#E7ECF1; --ink2:#C4CDD6; --muted:#8A96A2; --faint:#66727E;
+  --line:#242C34; --line2:#1E252C;
+  --accent:#8B9BFF; --accent-soft:#1B2340; --accent-ink:#A6B2FF;
+  --good:#3FC783; --good-soft:#102A1E; --warn:#DDA23A; --warn-soft:#2C2314;
+  --bad:#E37070; --bad-soft:#301A1A; --stripe:rgba(255,255,255,.022);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -18px rgba(0,0,0,.8);
+}}
+:root[data-theme="dark"]{
+  --bg:#0B0F12; --surface:#141A20; --surface2:#1A2128; --raise:#1D242B;
+  --ink:#E7ECF1; --ink2:#C4CDD6; --muted:#8A96A2; --faint:#66727E;
+  --line:#242C34; --line2:#1E252C;
+  --accent:#8B9BFF; --accent-soft:#1B2340; --accent-ink:#A6B2FF;
+  --good:#3FC783; --good-soft:#102A1E; --warn:#DDA23A; --warn-soft:#2C2314;
+  --bad:#E37070; --bad-soft:#301A1A; --stripe:rgba(255,255,255,.022);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -18px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-weight:400;
+  font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;font-weight:600;text-wrap:balance;letter-spacing:-.01em}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"zero"1}
+.lbl{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--faint)}
+
+/* ── 헤더 ── */
+header{position:sticky;top:0;z-index:30;background:var(--surface);border-bottom:1px solid var(--line)}
+.hd{max-width:1320px;margin:0 auto;padding:12px 18px 0;display:flex;flex-wrap:wrap;
+  align-items:baseline;gap:6px 16px}
+.brand{display:flex;align-items:baseline;gap:9px}
+.brand b{font-size:17px;font-weight:700;letter-spacing:-.02em}
+.brand .tag{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--accent-ink);
+  border:1px solid var(--accent);border-radius:3px;padding:1px 5px;text-transform:uppercase}
+.hd .meta{margin-left:auto;display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+.meta .m{display:flex;flex-direction:column;gap:1px}
+.meta .m span:last-child{font-family:var(--mono);font-size:13px;font-weight:500;font-variant-numeric:tabular-nums}
+/* 잔디 깎은 자국 */
+.mow{height:3px;display:flex;max-width:1320px;margin:10px auto 0;padding:0 18px;gap:0}
+.mow i{flex:1;height:3px}
+.mow i:nth-child(odd){background:var(--line)}
+.mow i:nth-child(even){background:var(--line2)}
+nav{max-width:1320px;margin:0 auto;padding:0 18px;display:flex;gap:2px;overflow-x:auto}
+nav button{background:none;border:0;border-bottom:2px solid transparent;padding:11px 13px;
+  cursor:pointer;color:var(--muted);font-weight:500;font-size:13px;white-space:nowrap}
+nav button:hover{color:var(--ink)}
+nav button[aria-current="true"]{color:var(--accent-ink);border-bottom-color:var(--accent);font-weight:600}
+
+main{max-width:1320px;margin:0 auto;padding:20px 18px 80px}
+.panel{display:none}.panel.on{display:block}
+.cols{display:grid;grid-template-columns:minmax(0,1.32fr) minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:1000px){.cols{grid-template-columns:1fr}}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.card>h2{padding:13px 16px;border-bottom:1px solid var(--line2);font-size:13px;display:flex;
+  align-items:center;gap:9px;flex-wrap:wrap}
+.card>h2 .lbl{margin-left:auto}
+.pad{padding:16px}
+.sticky{position:sticky;top:104px}
+@media(max-width:1000px){.sticky{position:static}}
+
+/* ── 마크시트 행 ── */
+.slip{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;padding:11px 14px;
+  border-bottom:1px solid var(--line2);cursor:pointer;align-items:center;background:transparent}
+.row:nth-child(even){background:var(--stripe)}
+.row:hover{background:var(--accent-soft)}
+.row[aria-selected="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.no{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--muted);
+  border:1px solid var(--line);border-radius:3px;padding:3px 6px;background:var(--surface2);min-width:36px;text-align:center}
+.tm{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tm .vs{font-weight:500;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tm .sub{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.tm .sub span{font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+.oz{display:flex;gap:5px}
+.oz .o{min-width:52px;text-align:center;padding:4px 5px;border:1px solid var(--line);
+  border-radius:3px;background:var(--surface);font-family:var(--mono);font-size:12.5px;
+  font-variant-numeric:tabular-nums;line-height:1.25}
+.oz .o small{display:block;font-size:9px;color:var(--faint);letter-spacing:.06em}
+.oz .o.g{border-color:var(--good);background:var(--good-soft);color:var(--good);font-weight:600}
+.oz .o.w{border-color:var(--warn);background:var(--warn-soft);color:var(--warn);font-weight:600}
+.verdict{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  font-size:12px;color:var(--muted);padding-top:2px}
+
+/* 펼쳐진 마켓 목록 */
+.exp{font-family:var(--mono);font-size:13px;color:var(--faint);width:18px;text-align:center}
+.row[aria-expanded="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.mkts{display:flex;flex-direction:column;background:var(--surface2);
+  border-bottom:1px solid var(--line);padding:8px 10px 10px;gap:7px}
+.mkt{border:1px solid var(--line);border-radius:4px;background:var(--surface);
+  padding:8px 10px;cursor:pointer}
+.mkt:hover{border-color:var(--accent)}
+.mkt[aria-selected="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.mkt-h{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12.5px}
+.mkt-h .no{padding:1px 5px;font-size:10px;min-width:0}
+.mkt-h b{font-weight:600}
+.cells{display:grid;gap:6px}
+.cell{border:1px solid var(--line);border-radius:3px;padding:5px 6px;text-align:center;
+  background:var(--surface2);line-height:1.3}
+.cell small{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--faint)}
+.cell b{display:block;font-family:var(--mono);font-size:13.5px;font-weight:500;font-variant-numeric:tabular-nums}
+.cell i{display:block;font-family:var(--mono);font-size:10.5px;font-style:normal;
+  font-variant-numeric:tabular-nums;color:var(--muted)}
+.cell i.pos{color:var(--good);font-weight:600}
+.cell i.neg{color:var(--muted)}
+.cell.g{border-color:var(--good);background:var(--good-soft)}
+.cell.w{border-color:var(--warn);background:var(--warn-soft)}
+.cell.best b{font-weight:600}
+.badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;
+  font-weight:600;letter-spacing:.05em;padding:2px 6px;border-radius:3px;border:1px solid;white-space:nowrap}
+.b-rec{color:var(--good);border-color:var(--good);background:var(--good-soft)}
+.b-watch{color:var(--warn);border-color:var(--warn);background:var(--warn-soft)}
+.b-info{color:var(--muted);border-color:var(--line);background:var(--surface2)}
+.b-flag{color:var(--accent-ink);border-color:var(--accent);background:var(--accent-soft)}
+.b-bad{color:var(--bad);border-color:var(--bad);background:var(--bad-soft)}
+
+table{width:100%;border-collapse:collapse}
+th,td{padding:7px 9px;text-align:right;font-family:var(--mono);font-size:12.5px;
+  font-variant-numeric:tabular-nums;border-bottom:1px solid var(--line2)}
+th:first-child,td:first-child{text-align:left;font-family:var(--sans);font-size:12.5px;color:var(--muted)}
+thead th{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:500}
+tbody tr:nth-child(even){background:var(--stripe)}
+tr.hl td{background:var(--accent-soft);font-weight:600}
+tr.hl td:first-child{color:var(--accent-ink)}
+td.pos{color:var(--good);font-weight:600}
+td.neg{color:var(--muted)}
+.scroll{overflow-x:auto}
+
+.f{display:flex;flex-direction:column;gap:4px}
+.f label,.fl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+input,select,textarea{background:var(--surface2);border:1px solid var(--line);border-radius:3px;
+  padding:7px 9px;width:100%;font-size:13px}
+input.num,select.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+textarea{font-family:var(--mono);font-size:12px;line-height:1.6;resize:vertical}
+.grid{display:grid;gap:10px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:520px){.g4{grid-template-columns:1fr 1fr}}
+.btn{background:var(--surface2);border:1px solid var(--line);border-radius:3px;padding:7px 13px;
+  cursor:pointer;font-size:12.5px;font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--accent-ink)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.pri:hover{filter:brightness(1.1);color:#fff}
+.btn.sm{padding:4px 9px;font-size:11.5px}
+.btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.rowf{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.note{font-size:12px;color:var(--muted);line-height:1.65}
+.note b{color:var(--ink2);font-weight:600}
+hr{border:0;border-top:1px solid var(--line2);margin:14px 0}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--line2);font-size:12.5px}
+.kv:last-child{border-bottom:0}
+.kv b{font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums}
+.bar{height:7px;border-radius:2px;background:var(--line2);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.empty{padding:34px 16px;text-align:center;color:var(--faint);font-size:13px}
+details summary{cursor:pointer;font-size:12.5px;color:var(--muted);padding:6px 0}
+details summary:hover{color:var(--accent-ink)}
+.combo{border:1px solid var(--line);border-radius:var(--r);padding:13px;background:var(--surface);
+  display:flex;flex-direction:column;gap:9px}
+.combo header{position:static;background:none;border:0;display:flex;align-items:baseline;gap:9px;padding:0}
+.combo .big{font-family:var(--mono);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
+.leg{display:flex;gap:9px;align-items:baseline;font-size:12.5px;padding:4px 0;border-top:1px solid var(--line2)}
+.leg .num{font-size:11.5px;color:var(--muted)}
+.leg b{margin-left:auto;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:10px}
+.tile{border:1px solid var(--line);border-radius:var(--r);padding:11px 12px;background:var(--surface2)}
+.tile .v{font-family:var(--mono);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2}
+.tile .v.pos{color:var(--good)}.tile .v.neg{color:var(--bad)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);
+  color:var(--bg);padding:9px 16px;border-radius:4px;font-size:12.5px;z-index:100;box-shadow:var(--shadow)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* 좁은 화면: 배당을 아래 줄로 내려 팀명에 폭을 준다 (반드시 스타일시트 최후단) */
+@media(max-width:560px){
+  .row{grid-template-columns:auto 1fr;gap:7px 10px;padding:10px 12px}
+  .tm .vs{white-space:normal;overflow:visible;line-height:1.35}
+  .oz{grid-column:1/-1;justify-content:flex-start}
+  .oz .o{flex:1;min-width:0}
+  .hd .meta{margin-left:0;gap:6px 14px}
+  .tiles{grid-template-columns:1fr 1fr}
+}
+</style>
+
+<header>
+  <div class="hd">
+    <div class="brand"><b>토토스캐너</b><span class="tag">Proto Value Scanner</span></div>
+    <div class="meta">
+      <div class="m"><span class="lbl">회차</span><span id="mRound">—</span></div>
+      <div class="m"><span class="lbl">경기</span><span id="mCount">0</span></div>
+      <div class="m"><span class="lbl">베트맨 마진</span><span id="mOver">—</span></div>
+      <div class="m"><span class="lbl">가치 픽</span><span id="mVal">0</span></div>
+      <div class="m"><span class="lbl">데이터</span><span id="mSrc" style="font-size:11px">로컬</span></div>
+    </div>
+  </div>
+  <div class="mow"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <nav>
+    <button data-tab="round" aria-current="true">이번 회차</button>
+    <button data-tab="input">경기 입력</button>
+    <button data-tab="combo">조합 추천</button>
+    <button data-tab="log">기록 · 정산</button>
+    <button data-tab="method">방법론 · 검증</button>
+  </nav>
+</header>
+
+<main>
+<!-- ══════════ 이번 회차 ══════════ -->
+<section class="panel on" id="p-round">
+  <div class="cols">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <h2>회차 픽 목록
+          <span class="chips" id="fLeague"></span>
+          <button class="btn sm" id="onlyValue" aria-pressed="false">가치 픽만</button>
+          <button class="btn sm" id="helpToggle" aria-pressed="false">용어 설명</button>
+        </h2>
+        <div id="dbBanner" hidden></div>
+        <div id="helpBox" hidden></div>
+        <div class="slip" id="slip"></div>
+      </div>
+      <div class="card">
+        <h2>배당 구간별 실측 편향 <span class="lbl">2023/24–2025/26 · n=16,514픽</span></h2>
+        <div class="pad">
+          <p class="note" style="margin:0 0 12px">백테스트에서 확인된 <b>구조적 사실</b>: 마진이 역배로 갈수록
+            기하급수적으로 무거워진다. 이번 회차 픽이 어느 구간에 있는지 먼저 보라.</p>
+          <div class="scroll"><table id="tBias"></table></div>
+        </div>
+      </div>
+    </div>
+    <div class="sticky" id="detail"></div>
+  </div>
+</section>
+
+<!-- ══════════ 경기 입력 ══════════ -->
+<section class="panel" id="p-input">
+  <div class="cols">
+    <div class="card">
+      <h2>경기 추가</h2>
+      <div class="pad grid" style="gap:12px">
+        <div class="grid g3">
+          <div class="f"><label for="iNo">항목번호</label><input class="num" id="iNo" value="1"></div>
+          <div class="f"><label for="iLeague">리그</label><select id="iLeague"></select></div>
+          <div class="f"><label for="iMarket">게임유형</label><select id="iMarket">
+            <option value="1X2">일반 승무패</option><option value="HANDICAP">핸디캡</option>
+            <option value="OU">언더오버</option><option value="SUM">SUM 홀짝</option></select></div>
+        </div>
+        <div class="grid g2">
+          <div class="f"><label for="iHome">홈</label><select id="iHome"></select></div>
+          <div class="f"><label for="iAway">원정</label><select id="iAway"></select></div>
+        </div>
+        <div class="grid g2">
+          <div class="f" id="wrapLine"><label for="iLine">기준선 <span id="lineHint"></span></label>
+            <input class="num" id="iLine" value="-1.0"></div>
+          <div class="f"><label for="iKick">킥오프 (KST)</label><input id="iKick" type="datetime-local"></div>
+        </div>
+        <hr>
+        <div class="fl">베트맨 배당 <span id="selHint"></span></div>
+        <div class="grid g3" id="wrapBet"></div>
+        <div class="fl" style="margin-top:4px">해외 컨센서스 배당 — 없으면 비워둠</div>
+        <div class="grid g3" id="wrapRef"></div>
+        <p class="note" style="margin:0">해외 배당을 비우면 자체 모델만으로 계산한다.
+          백테스트상 <b>모델 단독 픽은 기대 ROI −12%</b>였으니 참고용으로만 봐라.</p>
+        <div class="rowf"><button class="btn pri" id="addMatch">경기 추가</button>
+          <button class="btn" id="clearAll">전체 비우기</button>
+          <button class="btn" id="loadDemo">예시 회차 불러오기</button></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <h2>회차 불러오기 <span class="lbl">수집기 JSON · 텍스트</span></h2>
+        <div class="pad grid" style="gap:10px">
+          <p class="note" style="margin:0"><b>수집기 JSON</b>(collector/latest_import.json 내용)을 통째로 붙여넣거나,
+            한 줄에 한 경기씩 직접 써라.<br>
+            <code class="num" style="font-size:11.5px">번호 리그 홈 원정 유형 [기준선] 베트맨배당... / 해외배당...</code></p>
+          <textarea id="bulk" rows="7" spellcheck="false"></textarea>
+          <div class="rowf"><button class="btn pri" id="bulkGo">해석해서 불러오기</button>
+            <button class="btn" id="bulkSample">형식 예시 채우기</button>
+            <button class="btn" id="snapSave">현재 배당 스냅샷 저장</button></div>
+          <div id="bulkMsg" class="note"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>모델 보정 <span class="lbl">전역 설정</span></h2>
+        <div class="pad grid" style="gap:12px">
+          <div class="f"><label for="wMkt">시장 가중치 w_mkt — <span class="num" id="wMktV">1.00</span></label>
+            <input type="range" id="wMkt" min="0" max="1" step="0.05" value="1"></div>
+          <p class="note" style="margin:0">walk-forward 백테스트(5,238경기)에서 <b>최적값은 1.00</b>이었다.
+            즉 해외 시장 배당이 있으면 모델을 섞을수록 나빠진다. 낮추려면 근거가 있어야 한다.</p>
+          <div class="f"><label for="devig">마진 제거 방식</label><select id="devig">
+            <option value="power">파워법 — 백테스트 최적 (RPS 0.19274)</option>
+            <option value="shin">Shin (0.19276)</option>
+            <option value="prop">비례법 (0.19288)</option></select></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 조합 추천 ══════════ -->
+<section class="panel" id="p-combo">
+  <div class="card" style="margin-bottom:14px">
+    <h2>목표 배당 구간</h2>
+    <div class="pad grid" style="gap:12px">
+      <div class="chips" id="ranges"></div>
+      <div class="grid g4">
+        <div class="f"><label for="cMin">최소 배당</label><input class="num" id="cMin" value="1.5"></div>
+        <div class="f"><label for="cMax">최대 배당</label><input class="num" id="cMax" value="2.0"></div>
+        <div class="f"><label for="cLegs">최대 경기 수</label><input class="num" id="cLegs" value="4"></div>
+        <div class="f"><label for="cPool">후보 픽 수</label><input class="num" id="cPool" value="14"></div>
+      </div>
+      <div class="rowf"><button class="btn pri" id="runCombo">조합 계산</button>
+        <span class="note" id="comboMsg"></span></div>
+    </div>
+  </div>
+  <div class="grid" id="comboOut" style="grid-template-columns:repeat(auto-fit,minmax(290px,1fr))"></div>
+</section>
+
+<!-- ══════════ 기록 ══════════ -->
+<section class="panel" id="p-log">
+  <div class="cols">
+    <div class="card">
+      <h2>저장한 픽 <span class="lbl" id="dbState">로컬 저장</span></h2>
+      <div id="logList"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card"><h2>자체 채점 <span class="lbl">이 앱의 예측 vs 실제</span></h2>
+        <div class="pad"><div id="selfCalib"></div></div></div>
+      <div class="card"><h2>성적</h2><div class="pad"><div class="tiles" id="logStats"></div>
+        <p class="note" style="margin:14px 0 0">단기 적중률은 운이 지배한다. 기획서 §6.7대로
+          <b>CLV</b>(마감 직전 컨센서스 대비 이득)를 품질 지표로 봐라. 표본 30픽 미만이면 아무 의미 없다.</p></div></div>
+      <div class="card"><h2>보정 입력</h2><div class="pad grid" style="gap:10px">
+        <p class="note" style="margin:0">경기 종료 후 결과와, 가능하면 마감 직전 해외 배당을 넣으면 CLV가 계산된다.</p>
+        <div id="settleBox" class="note">저장된 픽을 눌러 선택해라.</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 방법론 ══════════ -->
+<section class="panel" id="p-method"><div id="methodOut"></div></section>
+</main>
+
+<script>
+const DATA = {"asof": "2026-09-11", "leagues": {"E0": {"name": "EPL", "mu": 0.1989, "gamma": 0.1724, "rho": -0.0979, "teams": {"Arsenal": {"ko": "아스널", "att": 0.3565, "def": 0.5936, "new": false}, "Aston Villa": {"ko": "아스톤 빌라", "att": 0.1374, "def": 0.0774, "new": false}, "Bournemouth": {"ko": "본머스", "att": 0.1547, "def": 0.0673, "new": false}, "Brentford": {"ko": "브렌트포드", "att": 0.165, "def": 0.0444, "new": false}, "Brighton": {"ko": "브라이턴", "att": 0.1605, "def": 0.0617, "new": false}, "Chelsea": {"ko": "첼시", "att": 0.263, "def": 0.0414, "new": false}, "Coventry": {"ko": "코번트리", "att": -0.5209, "def": -0.0362, "new": true}, "Crystal Palace": {"ko": "크리스탈 팰리스", "att": -0.0078, "def": 0.0113, "new": false}, "Everton": {"ko": "에버턴", "att": -0.0498, "def": 0.1706, "new": false}, "Fulham": {"ko": "풀럼", "att": 0.0117, "def": 0.0295, "new": false}, "Hull": {"ko": "헐 시티", "att": -0.2625, "def": 0.3303, "new": true}, "Ipswich": {"ko": "입스위치", "att": -0.1765, "def": -0.3546, "new": false}, "Leeds": {"ko": "리즈", "att": 0.0128, "def": 0.0961, "new": false}, "Liverpool": {"ko": "리버풀", "att": 0.3691, "def": 0.1188, "new": false}, "Man City": {"ko": "맨체스터 시티", "att": 0.4358, "def": 0.3685, "new": false}, "Man United": {"ko": "맨체스터 유나이티드", "att": 0.2228, "def": 0.0408, "new": false}, "Newcastle": {"ko": "뉴캐슬", "att": 0.2413, "def": 0.04, "new": false}, "Nott'm Forest": {"ko": "노팅엄 포레스트", "att": 0.0256, "def": 0.1063, "new": false}, "Sunderland": {"ko": "선덜랜드", "att": -0.1213, "def": 0.1522, "new": false}, "Tottenham": {"ko": "토트넘", "att": 0.0397, "def": -0.0715, "new": false}}, "lastMatch": "2026-09-06"}, "SP1": {"name": "라리가", "mu": 0.0975, "gamma": 0.2988, "rho": -0.0041, "teams": {"Alaves": {"ko": "알라베스", "att": -0.0047, "def": 0.0649, "new": false}, "Ath Bilbao": {"ko": "아틀레틱 빌바오", "att": 0.0615, "def": 0.1562, "new": false}, "Ath Madrid": {"ko": "아틀레티코 마드리드", "att": 0.2988, "def": 0.2079, "new": false}, "Barcelona": {"ko": "바르셀로나", "att": 0.7217, "def": 0.32, "new": false}, "Betis": {"ko": "레알 베티스", "att": 0.1878, "def": 0.1018, "new": false}, "Celta": {"ko": "셀타 비고", "att": 0.0888, "def": 0.0611, "new": false}, "Elche": {"ko": "엘체", "att": 0.0562, "def": -0.1322, "new": false}, "Espanol": {"ko": "에스파뇰", "att": -0.0632, "def": 0.0315, "new": false}, "Getafe": {"ko": "헤타페", "att": -0.3098, "def": 0.2584, "new": false}, "La Coruna": {"ko": "데포르티보 라코루냐", "att": 0.1541, "def": -0.0568, "new": true}, "Levante": {"ko": "레반테", "att": 0.0406, "def": -0.0676, "new": false}, "Malaga": {"ko": "말라가", "att": -0.4549, "def": -0.0813, "new": true}, "Osasuna": {"ko": "오사수나", "att": -0.0031, "def": 0.0283, "new": false}, "Real Madrid": {"ko": "레알 마드리드", "att": 0.5003, "def": 0.3779, "new": false}, "Santander": {"ko": "라싱 산탄데르", "att": 0.1124, "def": -0.3055, "new": true}, "Sevilla": {"ko": "세비야", "att": 0.0097, "def": -0.0398, "new": false}, "Sociedad": {"ko": "레알 소시에다드", "att": 0.0926, "def": -0.0003, "new": false}, "Valencia": {"ko": "발렌시아", "att": -0.0692, "def": 0.0024, "new": false}, "Vallecano": {"ko": "라요 바예카노", "att": -0.1007, "def": 0.1253, "new": false}, "Villarreal": {"ko": "비야레알", "att": 0.3904, "def": 0.0323, "new": false}}, "lastMatch": "2026-09-07"}, "I1": {"name": "세리에A", "mu": 0.1413, "gamma": 0.0932, "rho": -0.0117, "teams": {"Atalanta": {"ko": "아탈란타", "att": 0.2935, "def": 0.2473, "new": false}, "Bologna": {"ko": "볼로냐", "att": 0.1191, "def": 0.0856, "new": false}, "Cagliari": {"ko": "칼리아리", "att": -0.0842, "def": -0.0647, "new": false}, "Como": {"ko": "코모", "att": 0.3213, "def": 0.2553, "new": false}, "Fiorentina": {"ko": "피오렌티나", "att": 0.0549, "def": -0.0091, "new": false}, "Frosinone": {"ko": "프로시노네", "att": 0.0981, "def": -0.232, "new": true}, "Genoa": {"ko": "제노아", "att": -0.0958, "def": -0.0163, "new": false}, "Inter": {"ko": "인테르", "att": 0.62, "def": 0.2996, "new": false}, "Juventus": {"ko": "유벤투스", "att": 0.2334, "def": 0.3407, "new": false}, "Lazio": {"ko": "라치오", "att": 0.0674, "def": 0.1686, "new": false}, "Lecce": {"ko": "레체", "att": -0.3852, "def": -0.0496, "new": false}, "Milan": {"ko": "AC 밀란", "att": 0.2445, "def": 0.1875, "new": false}, "Monza": {"ko": "몬차", "att": -0.1914, "def": -0.2766, "new": false}, "Napoli": {"ko": "나폴리", "att": 0.2443, "def": 0.2627, "new": false}, "Parma": {"ko": "파르마", "att": -0.2731, "def": 0.0073, "new": false}, "Roma": {"ko": "AS 로마", "att": 0.3465, "def": 0.3462, "new": false}, "Sassuolo": {"ko": "사수올로", "att": 0.0551, "def": -0.1063, "new": false}, "Torino": {"ko": "토리노", "att": -0.0335, "def": -0.0758, "new": false}, "Udinese": {"ko": "우디네세", "att": 0.0026, "def": -0.0266, "new": false}, "Venezia": {"ko": "베네치아", "att": -0.2456, "def": -0.1762, "new": false}}, "lastMatch": "2026-09-07"}, "D1": {"name": "분데스리가", "mu": 0.3056, "gamma": 0.1838, "rho": -0.071, "teams": {"Augsburg": {"ko": "아우크스부르크", "att": -0.0667, "def": 0.0254, "new": false}, "Bayern Munich": {"ko": "바이에른 뮌헨", "att": 0.7464, "def": 0.3303, "new": false}, "Dortmund": {"ko": "도르트문트", "att": 0.3295, "def": 0.2959, "new": false}, "Ein Frankfurt": {"ko": "아인트라흐트 프랑크푸르트", "att": 0.1992, "def": -0.0736, "new": false}, "Elversberg": {"ko": "엘버스베르크", "att": 0.3616, "def": -0.2155, "new": true}, "FC Koln": {"ko": "쾰른", "att": -0.0531, "def": -0.128, "new": false}, "Freiburg": {"ko": "프라이부르크", "att": 0.0397, "def": 0.0236, "new": false}, "Hamburg": {"ko": "함부르크", "att": -0.1999, "def": -0.0352, "new": false}, "Hoffenheim": {"ko": "호펜하임", "att": 0.18, "def": -0.0833, "new": false}, "Leverkusen": {"ko": "레버쿠젠", "att": 0.346, "def": 0.2365, "new": false}, "M'gladbach": {"ko": "묀헨글라트바흐", "att": -0.0241, "def": -0.0257, "new": false}, "Mainz": {"ko": "마인츠", "att": -0.009, "def": 0.1658, "new": false}, "Paderborn": {"ko": "파더보른", "att": -0.4483, "def": 0.1463, "new": true}, "RB Leipzig": {"ko": "RB 라이프치히", "att": 0.2233, "def": 0.1421, "new": false}, "Schalke 04": {"ko": "샬케 04", "att": -0.4102, "def": 0.0595, "new": true}, "Stuttgart": {"ko": "슈투트가르트", "att": 0.3355, "def": 0.0995, "new": false}, "Union Berlin": {"ko": "우니온 베를린", "att": -0.1792, "def": -0.0278, "new": false}, "Werder Bremen": {"ko": "베르더 브레멘", "att": -0.0974, "def": -0.0277, "new": false}}, "lastMatch": "2026-09-06"}, "F1": {"name": "리그1", "mu": 0.252, "gamma": 0.1687, "rho": -0.0461, "teams": {"Angers": {"ko": "앙제", "att": -0.3166, "def": 0.0295, "new": false}, "Auxerre": {"ko": "오세르", "att": -0.0844, "def": 0.0016, "new": false}, "Brest": {"ko": "브레스트", "att": 0.0642, "def": -0.048, "new": false}, "Le Havre": {"ko": "르아브르", "att": -0.2465, "def": 0.0157, "new": false}, "Le Mans": {"ko": "르망", "att": 0.0313, "def": -0.2497, "new": true}, "Lens": {"ko": "랑스", "att": 0.2074, "def": 0.2536, "new": false}, "Lille": {"ko": "릴", "att": 0.1135, "def": 0.3555, "new": false}, "Lorient": {"ko": "로리앙", "att": -0.008, "def": 0.0279, "new": false}, "Lyon": {"ko": "리옹", "att": 0.2247, "def": 0.1482, "new": false}, "Marseille": {"ko": "마르세유", "att": 0.3171, "def": 0.08, "new": false}, "Monaco": {"ko": "모나코", "att": 0.2866, "def": 0.1045, "new": false}, "Nice": {"ko": "니스", "att": -0.0476, "def": 0.0279, "new": false}, "Paris FC": {"ko": "파리 FC", "att": 0.0872, "def": 0.1204, "new": false}, "Paris SG": {"ko": "파리 생제르맹", "att": 0.512, "def": 0.3401, "new": false}, "Rennes": {"ko": "렌", "att": 0.2296, "def": 0.0118, "new": false}, "Strasbourg": {"ko": "스트라스부르", "att": 0.2208, "def": 0.037, "new": false}, "Toulouse": {"ko": "툴루즈", "att": -0.0238, "def": 0.1013, "new": false}, "Troyes": {"ko": "트루아", "att": -0.0483, "def": -0.3662, "new": true}}, "lastMatch": "2026-09-06"}}, "uncertainty": {"sdLogitMarketMove": 0.126, "sdLogitModelVsMarket": 0.31, "derivedSd": {"HANDICAP": 0.08, "OU": 0.19, "SUM": 0.12}, "derivedBias": {"OU": 0.087, "SUM": -0.052}, "derivedCheck": {"n": 1814, "handi": {"pred": [0.24,0.198,0.562], "act": [0.235,0.198,0.567], "ece": 0.0126}, "ou": {"ll": 0.67583, "llMarket": 0.67578, "sd": 0.1908}, "sum": {"pred": 0.486, "act": 0.473, "ece": 0.0135}}}, "backtest": {"n": 5238, "seasons": "2023/24~2025/26", "leagues": 5, "devig": [{"m": "비례법", "rps": 0.19288, "ll": 0.96392, "ece": 0.0105}, {"m": "파워법", "rps": 0.19274, "ll": 0.96338, "ece": 0.006}, {"m": "Shin", "rps": 0.19276, "ll": 0.96344, "ece": 0.0072}], "sources": [{"m": "DC 모델 단독", "rps": 0.1998, "ll": 0.98655, "ece": 0.0113}, {"m": "시장 오프닝", "rps": 0.19328, "ll": 0.96544, "ece": 0.0079}, {"m": "시장 클로징", "rps": 0.19274, "ll": 0.96338, "ece": 0.006}], "wMkt": 1.0, "stale": [{"th": 0, "n": 3967, "roi": -0.63, "lo": -5.0, "hi": 3.8}, {"th": 2, "n": 2535, "roi": 0.69, "lo": -5.1, "hi": 6.3}, {"th": 5, "n": 1283, "roi": 2.76, "lo": -5.7, "hi": 11.3}, {"th": 10, "n": 404, "roi": 14.41, "lo": -2.3, "hi": 31.9}], "modelOnly": [{"th": 0, "n": 5705, "roi": -12.45}, {"th": 5, "n": 4088, "roi": -14.96}], "betmanSim": [{"th": 0, "n": 513, "per": 0.1, "odds": 1.55, "roi": 5.63, "lo": -0.3, "hi": 11.7}, {"th": 2, "n": 236, "per": 0.05, "odds": 1.53, "roi": 8.47, "lo": -1.1, "hi": 17.1}, {"th": 5, "n": 64, "per": 0.01, "odds": 1.64, "roi": 28.39, "lo": 9.9, "hi": 48.6}], "bias": [{"b": "1.00–1.30", "n": 377, "ev": -0.25, "roi": -0.57}, {"b": "1.30–1.60", "n": 1377, "ev": -5.14, "roi": -3.89}, {"b": "1.60–2.00", "n": 2020, "ev": -10.79, "roi": -8.98}, {"b": "2.00–2.60", "n": 2777, "ev": -17.08, "roi": -18.37}, {"b": "2.60–3.50", "n": 5718, "ev": -22.29, "roi": -20.61}, {"b": "3.50–5.00", "n": 2267, "ev": -29.16, "roi": -33.38}, {"b": "5.00–8.00", "n": 927, "ev": -37.38, "roi": -51.43}, {"b": "8.00+", "n": 251, "ev": -44.42, "roi": -49.06}], "calib": [{"p": 0.076, "a": 0.065, "n": 338}, {"p": 0.161, "a": 0.142, "n": 2007}, {"p": 0.252, "a": 0.259, "n": 6251}, {"p": 0.343, "a": 0.327, "n": 2737}, {"p": 0.449, "a": 0.453, "n": 1898}, {"p": 0.545, "a": 0.547, "n": 1304}, {"p": 0.644, "a": 0.685, "n": 758}, {"p": 0.744, "a": 0.767, "n": 326}, {"p": 0.832, "a": 0.86, "n": 86}]}};
+/* ═══════════════════════════════════════════════════════════════
+   엔진 — 기획서 §6.1 스코어행렬 · §6.2.1 마진제거 · §6.2.2 풀링
+          §6.3.1 Dixon-Coles · §6.4 앙상블/행렬 재구성 · §6.5 EV
+   ═══════════════════════════════════════════════════════════════ */
+const MAXG = 10, Z80 = 1.2816;
+const clamp = (x,a,b)=>x<a?a:x>b?b:x;
+const logit = p => Math.log(clamp(p,1e-9,1-1e-9)/(1-clamp(p,1e-9,1-1e-9)));
+const sig = z => 1/(1+Math.exp(-z));
+const norm = a => { const s=a.reduce((x,y)=>x+y,0); return a.map(x=>x/s); };
+
+/* ── §6.2.1 마진 제거 ───────────────────────────── */
+function devigProp(o){ return norm(o.map(x=>1/x)); }
+function devigPower(o){
+  const imp=o.map(x=>1/x); let lo=.3, hi=3;
+  for(let i=0;i<70;i++){ const k=(lo+hi)/2;
+    (imp.reduce((s,v)=>s+Math.pow(v,k),0)>1 ? lo=k : hi=k); }
+  return norm(imp.map(v=>Math.pow(v,(lo+hi)/2)));
+}
+function devigShin(o){
+  const imp=o.map(x=>1/x), s=imp.reduce((a,b)=>a+b,0); let lo=0,hi=.4;
+  const f=z=>imp.map(i=>(Math.sqrt(z*z+4*(1-z)*i*i/s)-z)/(2*(1-z)));
+  for(let i=0;i<70;i++){ const z=(lo+hi)/2;
+    (f(z).reduce((a,b)=>a+b,0)>1 ? lo=z : hi=z); }
+  return norm(f((lo+hi)/2));
+}
+const DEVIG={prop:devigProp,power:devigPower,shin:devigShin};
+const overround = o => o.reduce((s,x)=>s+1/x,0)-1;
+
+/* ── §6.2.2 로그-선형 풀링 ──────────────────────── */
+function logPool(dists, ws){
+  const n=dists[0].length, out=[];
+  for(let i=0;i<n;i++){ let a=0;
+    dists.forEach((d,j)=>{ a += ws[j]*Math.log(Math.max(d[i],1e-12)); });
+    out.push(Math.exp(a)); }
+  return norm(out);
+}
+
+/* ── §6.1 스코어 확률행렬 ───────────────────────── */
+const LF=[0]; for(let i=1;i<=MAXG+1;i++) LF[i]=LF[i-1]+Math.log(i);
+function scoreMatrix(lam,nu,rho){
+  lam=clamp(lam,.05,7); nu=clamp(nu,.05,7); rho=clamp(rho,-.35,.35);
+  const ph=[],pa=[];
+  for(let k=0;k<=MAXG;k++){ ph.push(Math.exp(-lam+k*Math.log(lam)-LF[k]));
+                            pa.push(Math.exp(-nu +k*Math.log(nu) -LF[k])); }
+  const M=[]; for(let h=0;h<=MAXG;h++){ const r=[];
+    for(let a=0;a<=MAXG;a++) r.push(ph[h]*pa[a]); M.push(r); }
+  M[0][0]*=1-lam*nu*rho; M[0][1]*=1+lam*rho; M[1][0]*=1+nu*rho; M[1][1]*=1-rho;
+  let s=0; M.forEach(r=>r.forEach(v=>s+=Math.max(v,0)));
+  return M.map(r=>r.map(v=>Math.max(v,0)/s));
+}
+/* 행렬 → 각 마켓 (모든 마켓이 한 행렬에서 파생되므로 서로 모순이 없다) */
+function mk1x2(M){ let H=0,D=0,A=0;
+  M.forEach((r,h)=>r.forEach((p,a)=>{ h>a?H+=p:h===a?D+=p:A+=p; })); return [H,D,A]; }
+function mkHandicap(M,k){ let W=0,D=0,L=0;
+  M.forEach((r,h)=>r.forEach((p,a)=>{ const d=h+k-a; d>1e-9?W+=p:Math.abs(d)<1e-9?D+=p:L+=p; }));
+  return [W,D,L]; }
+function mkOU(M,L){ let u=0,o=0;
+  M.forEach((r,h)=>r.forEach((p,a)=>{ (h+a)<L?u+=p:(h+a)>L?o+=p:0; })); return norm([u,o]); }
+function mkSum(M,zeroEven){ let od=0,ev=0;
+  M.forEach((r,h)=>r.forEach((p,a)=>{ const t=h+a;
+    if(t===0){ zeroEven?ev+=p:od+=p; } else (t%2?od+=p:ev+=p); })); return [od,ev]; }
+
+/* ── §6.3.1 Dixon-Coles λ ───────────────────────── */
+function lambdasOf(lg,home,away,adj){
+  const L=DATA.leagues[lg]; if(!L) return null;
+  const H=L.teams[home], A=L.teams[away]; if(!H||!A) return null;
+  const a=adj||{};
+  const lam=Math.exp(L.mu+L.gamma+H.att-A.def) * (1+(a.hAtt||0)) * (1+(a.aDef||0));
+  const nu =Math.exp(L.mu       +A.att-H.def) * (1+(a.aAtt||0)) * (1+(a.hDef||0));
+  return {lam,nu,rho:L.rho,new:H.new||A.new};
+}
+
+/* ── §6.4 행렬 재구성: 목표 확률을 만족하는 (λ,ν,ρ)를 KL 최소화로 찾는다 ── */
+function nelderMead(f,x0,steps){
+  const n=x0.length; let S=[x0.slice()];
+  for(let i=0;i<n;i++){ const p=x0.slice(); p[i]+=steps[i]; S.push(p); }
+  let F=S.map(f);
+  for(let it=0; it<220; it++){
+    const idx=F.map((v,i)=>i).sort((a,b)=>F[a]-F[b]);
+    S=idx.map(i=>S[i]); F=idx.map(i=>F[i]);
+    if(Math.abs(F[n]-F[0])<1e-11) break;
+    const c=new Array(n).fill(0);
+    for(let i=0;i<n;i++) for(let j=0;j<n;j++) c[j]+=S[i][j]/n;
+    const ref=c.map((v,j)=>v+(v-S[n][j])), fr=f(ref);
+    if(fr<F[0]){ const ex=c.map((v,j)=>v+2*(v-S[n][j])), fe=f(ex);
+      if(fe<fr){S[n]=ex;F[n]=fe;} else {S[n]=ref;F[n]=fr;} }
+    else if(fr<F[n-1]){ S[n]=ref; F[n]=fr; }
+    else { const co=c.map((v,j)=>v+.5*(S[n][j]-v)), fc=f(co);
+      if(fc<F[n]){S[n]=co;F[n]=fc;}
+      else for(let i=1;i<=n;i++){ S[i]=S[i].map((v,j)=>S[0][j]+.5*(v-S[0][j])); F[i]=f(S[i]); } }
+  }
+  return S[0];
+}
+const KL=(t,p)=>t.reduce((s,v,i)=>s+(v>1e-9? v*Math.log(v/Math.max(p[i],1e-12)) :0),0);
+/** 목표 확률(어느 마켓이든)을 만족하는 (λ,ν)를 KL 최소화로 찾는다.
+ *  2지선다 마켓은 제약이 1개뿐이라 부족한 자유도를 모델 seed 쪽으로 약하게 당긴다. */
+function reconstruct(goals, seed){
+  // goals: [{target:[...], project:M=>[...], w:1}, ...]
+  const gs = goals.filter(g=>g && g.target);
+  const hasFull = gs.some(g=>g.target.length>=3);
+  const anchor = hasFull ? 0 : 0.05;      // 3지선다 하나면 자유도가 딱 맞다
+  const l0=Math.log(seed.lam), n0=Math.log(seed.nu);
+  const obj = x => {
+    const a=clamp(x[0],-3,2), b=clamp(x[1],-3,2);
+    const M=scoreMatrix(Math.exp(a),Math.exp(b),seed.rho);
+    let e = anchor*((a-l0)*(a-l0)+(b-n0)*(b-n0));
+    gs.forEach(g=>{ e += (g.w||1) * KL(g.target, g.project(M)); });
+    return e;
+  };
+  const x = nelderMead(obj, [l0,n0], [.12,.12]);
+  return { lam:Math.exp(clamp(x[0],-3,2)), nu:Math.exp(clamp(x[1],-3,2)), rho:seed.rho };
+}
+
+/* ── 마켓별 선택지 정의 ─────────────────────────── */
+const MARKETS = {
+  '1X2':      {n:3, labels:['승','무','패'],  full:['홈 승','무','원정 승'], line:false},
+  'HANDICAP': {n:3, labels:['승','무','패'],  full:['핸디 승','핸디 무','핸디 패'], line:'핸디캡 (홈 기준, 예 −1.0)'},
+  'OU':       {n:2, labels:['언더','오버'],   full:['언더','오버'], line:'기준 득점 (예 2.5)'},
+  'SUM':      {n:2, labels:['홀','짝'],       full:['홀','짝'], line:false}
+};
+function probsFor(m, M){
+  if(m.market==='1X2') return mk1x2(M);
+  if(m.market==='HANDICAP') return mkHandicap(M, +m.line||0);
+  if(m.market==='OU') return mkOU(M, +m.line||2.5);
+  return mkSum(M, ST.zeroEven);
+}
+
+/* ── 경기 단위 그룹핑: 베트맨은 한 경기를 마켓별로 여러 항목으로 쪼개서 낸다 ── */
+function groupMatches(list){
+  const g = new Map();
+  list.forEach(m=>{
+    const k = [m.league, m.home, m.away, (m.kick||'').slice(0,10)].join('|');
+    if(!g.has(k)) g.set(k, {key:k, league:m.league, home:m.home, away:m.away,
+        homeKo:m.homeKo, awayKo:m.awayKo, kick:m.kick, rows:[]});
+    g.get(k).rows.push(m);
+  });
+  const arr=[...g.values()];
+  arr.forEach(G=> G.rows.sort((a,b)=>(a.no||0)-(b.no||0)));
+  arr.sort((a,b)=> (a.rows[0].no||0)-(b.rows[0].no||0));
+  return arr;
+}
+
+/* ── §6.1 + §6.4 한 경기 = 스코어행렬 하나. 모든 마켓이 거기서 파생된다 ──
+   승무패에만 해외 배당이 있어도 핸디·언오버·SUM의 적정배당이 함께 나온다. */
+function buildMatrix(G){
+  const dev = DEVIG[ST.devig];
+  const adj = (G.rows.find(m=>m.adj && (m.adj.hAtt||m.adj.aAtt))||{}).adj || {};
+  const seed = lambdasOf(G.league, G.home, G.away, adj);
+  if(!seed) return {error:'팀 레이팅 없음 — 리그/팀 이름을 확인해라'};
+
+  const ok = (r,n)=> r && r.length===n && r.every(x=>+x>1);
+  const r1 = G.rows.find(m=>m.market==='1X2' && ok(m.ref,3));
+  const rou = G.rows.find(m=>m.market==='OU' && ok(m.ref,2));
+  const rh  = G.rows.find(m=>m.market==='HANDICAP' && ok(m.ref,3));
+
+  const goals=[];
+  if(r1)  goals.push({target:dev(r1.ref.map(Number)),  project:mk1x2, w:1});
+  else if(rh) goals.push({target:dev(rh.ref.map(Number)), project:M=>mkHandicap(M, +rh.line||0), w:1});
+  if(rou) goals.push({target:dev(rou.ref.map(Number)), project:M=>mkOU(M, +rou.line||2.5), w:.7});
+
+  const modelM = scoreMatrix(seed.lam, seed.nu, seed.rho);
+  if(!goals.length) return {M:modelM, seed, source:'model', consensus:null};
+
+  const cons = reconstruct(goals, seed);
+  let M = scoreMatrix(cons.lam, cons.nu, cons.rho);
+
+  // 모델과 시장을 섞는 경우 (기본 w_mkt=1.00 이면 시장 그대로)
+  if(ST.wMkt < .999){
+    const blended = logPool([mk1x2(modelM), mk1x2(M)], [1-ST.wMkt, ST.wMkt]);
+    const c2 = reconstruct([{target:blended, project:mk1x2, w:1}], seed);
+    M = scoreMatrix(c2.lam, c2.nu, c2.rho);
+    return {M, seed, source:'blend', consensus:cons, modelM};
+  }
+  return {M, seed, source:'market', consensus:cons, modelM};
+}
+
+/* ── §6.5 한 항목(마켓) 평가 ──────────────── */
+function evaluate(m){
+  const B = m._B;                       // 경기 단위로 계산된 행렬 (computeAll이 붙여준다)
+  if(!B) return {error:'계산 전'};
+  if(B.error) return {error:B.error};
+
+  const pFinal = probsFor(m, B.M);
+  const pModel = B.modelM ? probsFor(m, B.modelM)
+               : (B.source==='model' ? pFinal : null);
+  const dev = DEVIG[ST.devig];
+  const hasRef = m.ref && m.ref.length===MARKETS[m.market].n && m.ref.every(x=>+x>1);
+  const pRef = hasRef ? dev(m.ref.map(Number)) : null;
+
+  // 불확실성: 시장 이동폭 + 모델·시장 불일치 (백테스트 실측 표준편차)
+  const base = B.source==='model' ? DATA.uncertainty.sdLogitModelVsMarket
+                                  : DATA.uncertainty.sdLogitMarketMove;
+  const dis = (pModel && B.source!=='model')
+    ? pFinal.map((p,i)=>Math.abs(logit(pModel[i])-logit(p))*0.4) : pFinal.map(()=>0);
+  // 파생 마켓(이 마켓엔 해외 배당이 없고 승무패 컨센서스에서 뽑아낸 경우) 실측 보정.
+  // 10,878경기 중 1,814경기로 측정: 파생 오버2.5는 로짓 기준 평균 0.087 낮게, SUM 홀은 0.052 높게 나온다.
+  const isDerived = !hasRef && B.source!=='model';
+  let p2 = pFinal;
+  if(isDerived){
+    const bias = DATA.uncertainty.derivedBias[m.market];
+    if(bias){
+      const z = pFinal.map((p,i)=> logit(p) + (i===1?bias:-bias));   // 2지선다: 두 번째 항목 쪽으로 보정
+      p2 = norm(z.map(sig));
+    }
+  }
+  const dsd = isDerived ? (DATA.uncertainty.derivedSd[m.market]||0.08) : 0;
+  const pLo = p2.map((p,i)=> sig(logit(p) - Z80*Math.hypot(base, dis[i], dsd)));
+
+  const bet = m.betman||[];
+  // 해외 컨센서스가 없으면 등급을 매기지 않는다.
+  // 백테스트: 모델 확률을 p_true로 써서 베팅하면 ROI −12~−15% (방법론 탭 대조군).
+  const gradable = B.source !== 'model';
+  const picks = p2.map((p,i)=>{
+    const o = +bet[i];
+    if(!(o>1)) return {i, p, pLo:pLo[i], fair:1/p, odds:null, ev:null, evLo:null, grade:'NODATA'};
+    const ev = p*o-1, evLo = pLo[i]*o-1;
+    return {i, p, pLo:pLo[i], fair:1/p, odds:o, ev, evLo,
+            grade: !gradable ? 'NOREF' : evLo>0 ? 'REC' : ev>0 ? 'WATCH' : 'INFO',
+            band: bandOf(o)};
+  });
+  const over = bet.length===MARKETS[m.market].n && bet.every(x=>+x>1)
+             ? overround(bet.map(Number)) : null;
+  const best = picks.filter(p=>p.ev!==null).sort((a,b)=>b.evLo-a.evLo)[0]||null;
+  return {pFinal:p2, pLo, pModel, pRef, picks, over, best, source:B.source,
+          M:B.M, seed:B.seed, fairOdds:p2.map(p=>1/p),
+          isNew: B.seed && B.seed.new, derived:isDerived};
+}
+
+/* 전체 재계산: 경기별 행렬을 만들고 각 항목에 붙인다 */
+function computeAll(){
+  ST.groups = groupMatches(ST.matches);
+  ST.groups.forEach(G=>{
+    const B = buildMatrix(G);
+    G.B = B;
+    G.rows.forEach(m=>{ m._B = B; m._r = evaluate(m); });
+    const all = G.rows.flatMap(m=> (m._r.picks||[]).filter(p=>p.ev!=null).map(p=>({...p, m})));
+    G.best = all.sort((a,b)=>b.evLo-a.evLo)[0]||null;
+    G.nValue = all.filter(p=>p.grade==='REC'||p.grade==='WATCH').length;
+  });
+  return ST.groups;
+}
+
+/* 실측 편향 구간 (백테스트 §6.2.3) */
+function bandOf(o){
+  for(const b of DATA.backtest.bias){
+    const [lo,hi] = b.b==='8.00+' ? [8,999] : b.b.split('–').map(Number);
+    if(o>=lo && o<hi) return b;
+  }
+  return null;
+}
+
+/* ═══════════════ 상태 ═══════════════ */
+const ST = { matches:[], sel:null, devig:'power', wMkt:1, zeroEven:true,
+             onlyValue:false, lg:'ALL', round:'', picks:[], settleId:null,
+             snap:{}, snapAt:'', help:false, open:null, groups:[] };
+/* 스냅샷 키: 항목번호 + 마켓 + 기준선 */
+const snapKey = m => m.no+'|'+m.market+'|'+(m.line==null?'':(+m.line).toFixed(1));
+const $ = s=>document.querySelector(s), $$ = s=>[...document.querySelectorAll(s)];
+const pct = (x,d=1)=> (x*100).toFixed(d)+'%';
+const sgn = (x,d=1)=> (x>=0?'+':'')+(x*100).toFixed(d)+'%';
+const od  = x => x==null||!isFinite(x) ? '—' : x>=100 ? x.toFixed(0) : x.toFixed(2);
+const koTeam = (lg,t)=> (DATA.leagues[lg]&&DATA.leagues[lg].teams[t]&&DATA.leagues[lg].teams[t].ko)||t;
+const teamLabel = (m,side)=> m[side+'Ko'] || koTeam(m.league, m[side]);
+const LGN = lg => (DATA.leagues[lg]||{}).name||lg;
+const GR = {REC:['b-rec','🟢','추천'],WATCH:['b-watch','🟡','관심'],
+            INFO:['b-info','⚪','참고'],NODATA:['b-info','·','데이터 없음'],
+            NOREF:['b-bad','⚠','해외 배당 필요']};
+let toastT;
+function toast(msg){ let t=$('#toast'); if(!t){t=document.createElement('div');t.id='toast';t.className='toast';document.body.appendChild(t);}
+  t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,2600); }
+const save = ()=>{ try{ localStorage.setItem('ts_v1', JSON.stringify(
+  {m:ST.matches, r:ST.round, d:ST.devig, w:ST.wMkt, z:ST.zeroEven,
+   s:ST.snap, sa:ST.snapAt})); }catch(e){} };
+
+/* ═══════════════ §6.2.4 배당 변동 · 지연 배당 탐지 ═══════════════ */
+function movement(m, r){
+  const prev = ST.snap[snapKey(m)];
+  if(!prev) return null;
+  const dev = DEVIG[ST.devig];
+  const cur = { betman: (m.betman||[]).map(Number), ref: m.ref?m.ref.map(Number):null };
+  const chg = a=>{
+    if(!prev[a] || !cur[a] || prev[a].length!==cur[a].length) return null;
+    return cur[a].map((v,i)=> v - prev[a][i]);
+  };
+  const dB = chg('betman'), dR = chg('ref');
+  const moved = arr => arr && arr.some(x=>Math.abs(x)>=0.005);
+  let dp = null;
+  if(prev.ref && cur.ref && prev.ref.every(x=>x>1) && cur.ref.every(x=>x>1)){
+    const p0 = dev(prev.ref), p1 = dev(cur.ref);
+    dp = p1.map((v,i)=> v - p0[i]);
+  }
+  const maxDp = dp ? Math.max(...dp.map(Math.abs)) : 0;
+  return { dBetman:dB, dRef:dR, dP:dp, at:prev.at,
+           betmanMoved:moved(dB), refMoved:moved(dR),
+           stale: maxDp >= 0.04 && !moved(dB) };   // 해외는 4%p 이상 움직였는데 베트맨은 그대로
+}
+function takeSnapshot(){
+  const now = new Date().toISOString();
+  ST.matches.forEach(m=>{
+    ST.snap[snapKey(m)] = { betman:(m.betman||[]).map(Number),
+                            ref: m.ref?m.ref.map(Number):null, at:now };
+  });
+  ST.snapAt = now; save(); render();
+  toast(ST.matches.length+'경기 배당을 스냅샷으로 저장했다');
+}
+
+/* ═══════════════ 회차 목록 — 경기 한 줄, 누르면 마켓이 펼쳐진다 ═══════════════ */
+const MKLABEL = m => ({
+  '1X2':'일반 승무패',
+  'HANDICAP':'핸디캡 '+((+m.line>0?'+':'')+(+m.line).toFixed(1)),
+  'OU':'언더오버 '+(+m.line).toFixed(1),
+  'SUM':'SUM 홀짝'})[m.market];
+
+function render(){
+  computeAll();
+  const slip=$('#slip'); slip.innerHTML='';
+  const groups = ST.groups.filter(G=> ST.lg==='ALL'||G.league===ST.lg);
+
+  let ovs=[], nValMatches=0, nValPicks=0;
+  ST.groups.forEach(G=>{
+    G.rows.forEach(m=>{ if(m._r && m._r.over!=null) ovs.push(m._r.over); });
+    if(G.nValue){ nValMatches++; nValPicks+=G.nValue; }
+  });
+  $('#mCount').textContent = ST.groups.length;
+  $('#mVal').textContent   = nValPicks;
+  $('#mOver').textContent  = ovs.length ? pct(ovs.reduce((a,b)=>a+b,0)/ovs.length) : '—';
+  $('#mRound').textContent = ST.round || '—';
+
+  const shown = groups.filter(G=> !ST.onlyValue || G.nValue>0);
+  if(!shown.length){
+    slip.innerHTML = '<div class="empty">'+
+      (ST.matches.length ? '조건에 맞는 경기가 없다.'
+       : '경기가 없다. <b>경기 입력</b> 탭에서 수집기 JSON을 붙여넣거나 예시 회차를 불러와라.')+'</div>';
+  }
+  shown.forEach(G=> slip.appendChild(matchRow(G)));
+  renderDetail();
+  renderBias();
+}
+
+function matchRow(G){
+  const wrap=document.createElement('div');
+  const open = ST.open===G.key;
+  const B=G.B||{}, err=B.error;
+  const g = G.best ? GR[G.best.grade] : GR.NODATA;
+  const nos = G.rows.map(m=>m.no).filter(n=>n!=null);
+  const noLabel = nos.length ? String(Math.min(...nos)).padStart(3,'0') + (nos.length>1?'+':'') : '—';
+
+  const head=document.createElement('div');
+  head.className='row'; head.tabIndex=0; head.setAttribute('role','button');
+  head.setAttribute('aria-expanded', String(open));
+  head.setAttribute('aria-selected', String(open));
+  const summary = err ? '<span class="badge b-bad">'+err+'</span>'
+    : G.best ? '<span class="badge '+g[0]+'">'+g[1]+' '+g[2]+'</span>'+
+        '<span>'+MKLABEL(G.best.m)+' · '+MARKETS[G.best.m.market].full[G.best.i]+
+        ' · EV <b class="num">'+sgn(G.best.ev)+'</b></span>'
+      : '<span class="badge b-info">배당 미입력</span>';
+  const srcBadge = err ? ''
+    : B.source==='model' ? '<span class="badge b-bad" title="해외 컨센서스 배당이 없어 자체 모델로만 계산했다. 백테스트 ROI −12%">모델 단독 · 등급 없음</span>'
+    : B.source==='blend' ? '<span class="badge b-flag">앙상블 w_mkt '+ST.wMkt.toFixed(2)+'</span>'
+    : '<span class="badge b-flag">해외 컨센서스 기준</span>';
+  const mvAny = G.rows.map(m=>movement(m, m._r)).filter(Boolean);
+  const staleBadge = mvAny.some(x=>x.stale)
+    ? '<span class="badge b-flag" title="해외 시장 확률이 4%p 이상 움직였는데 베트맨 배당은 그대로다">⚡ 지연 배당</span>' : '';
+
+  head.innerHTML =
+    '<div class="no">'+noLabel+'</div>'+
+    '<div class="tm"><div class="vs">'+(G.homeKo||koTeam(G.league,G.home))+' vs '+
+      (G.awayKo||koTeam(G.league,G.away))+'</div>'+
+      '<div class="sub"><span>'+LGN(G.league)+'</span>'+
+      (G.kick?'<span>'+G.kick.replace('T',' ')+'</span>':'')+
+      '<span>'+G.rows.length+'개 유형</span>'+
+      (G.nValue?'<span style="color:var(--good)">가치 픽 '+G.nValue+'</span>':'')+'</div></div>'+
+    '<div class="oz"><div class="exp" aria-hidden="true">'+(open?'▾':'▸')+'</div></div>'+
+    '<div class="verdict">'+summary+srcBadge+staleBadge+'</div>';
+  head.onclick = ()=>{ ST.open = open?null:G.key;
+    if(!open && !ST.sel) ST.sel = G.rows[0].id; render(); };
+  head.onkeydown = e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); head.click(); } };
+  wrap.appendChild(head);
+
+  if(open){
+    const box=document.createElement('div'); box.className='mkts';
+    G.rows.forEach(m=>{
+      const r=m._r||{}, M=MARKETS[m.market];
+      const el=document.createElement('div');
+      el.className='mkt'; el.tabIndex=0; el.setAttribute('role','button');
+      el.setAttribute('aria-selected', String(ST.sel===m.id));
+      const bestI = r.best ? r.best.i : -1;
+      const cells = M.labels.map((lb,i)=>{
+        const p=(r.picks||[])[i];
+        if(!p) return '<div class="cell"><small>'+lb+'</small><b>—</b></div>';
+        const cls = p.grade==='REC'?' g':p.grade==='WATCH'?' w':'';
+        const evTxt = p.ev==null?'—':sgn(p.ev);
+        const evCls = p.ev==null?'':(p.ev>0?'pos':'neg');
+        return '<div class="cell'+cls+(i===bestI?' best':'')+'">'+
+          '<small>'+lb+'</small><b>'+od(p.odds)+'</b>'+
+          '<i class="'+evCls+'">'+evTxt+'</i></div>';
+      }).join('');
+      const mg = r.best ? GR[r.best.grade] : GR.NODATA;
+      el.innerHTML =
+        '<div class="mkt-h"><span class="no">'+(m.no!=null?String(m.no).padStart(3,'0'):'—')+'</span>'+
+        '<b>'+MKLABEL(m)+'</b>'+
+        (r.derived?'<span class="badge b-info" title="이 마켓에는 해외 배당이 없어, 같은 경기의 승무패 컨센서스로 만든 스코어행렬에서 파생했다">파생</span>':'')+
+        (r.best&&r.best.grade!=='NODATA'?'<span class="badge '+mg[0]+'" style="margin-left:auto">'+mg[1]+' '+mg[2]+'</span>':'')+
+        '</div><div class="cells" style="grid-template-columns:repeat('+M.n+',1fr)">'+cells+'</div>';
+      el.onclick = e=>{ e.stopPropagation(); ST.sel=m.id; render(); };
+      el.onkeydown = e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); } };
+      box.appendChild(el);
+    });
+    wrap.appendChild(box);
+  }
+  return wrap;
+}
+
+/* ═══════════════ 상세 (§10.3) ═══════════════ */
+function reasonText(m,r){
+  const M=MARKETS[m.market], b=r.best;
+  if(!b||b.grade==='NODATA') return '베트맨 배당을 넣으면 기대값을 계산한다.';
+  if(b.grade==='NOREF') return '<b>해외 컨센서스 배당이 없다.</b> 아래 EV는 자체 모델 확률로만 계산한 값이라 '+
+    '등급을 매기지 않았다. 백테스트에서 모델 확률로 EV&gt;0 픽을 골라 베팅하면 ROI가 <b>−12.5%</b>였다 '+
+    '(방법론 탭 대조군). 이 경기의 해외 배당을 넣어야 판단할 수 있다.';
+  if(b.grade==='INFO'){
+    return '이번 경기에는 가치 픽이 없다. 가장 손해가 적은 선택은 '+M.full[b.i]+
+           ' (EV '+sgn(b.ev)+')이고, 그래도 기대값은 음수다.';
+  }
+  const impl = m.betman && m.betman.every(x=>x>1) ? DEVIG[ST.devig](m.betman.map(Number)) : null;
+  let code, why;
+  if(m.market==='OU'||m.market==='SUM'){ code='TOTALS_MISPRICED'; why='득점 관련 가격에 괴리가 있다'; }
+  else if(b.i===0 && b.odds<2.2){ code='FAV_UNDERPRICED';
+    why='베트맨이 강팀의 승리 가능성을 해외 시장보다 낮게 본다'; }
+  else if(b.i>0){ code='DOG_UNDERPRICED';
+    why='약팀 쪽 결과의 가능성이 상대적으로 과소평가돼 있다'; }
+  else { code='FAV_UNDERPRICED'; why='해외 시장 대비 배당이 후하다'; }
+  const tail = b.evLo>0
+    ? ' 80% 하한 기준으로도 '+sgn(b.evLo)+'라 신뢰구간이 0을 넘는다.'
+    : ' 다만 80% 하한은 '+sgn(b.evLo)+'로 아직 음수다 — 확률 추정이 조금만 틀려도 손해로 뒤집힌다.';
+  return '<b>'+code+'</b> — '+why+'. 적정확률 '+pct(b.p)+
+    (impl? ' vs 베트맨 내재확률 '+pct(impl[b.i]) : '')+
+    ' → 배당 '+od(b.odds)+'는 적정배당 '+od(b.fair)+'보다 후하다. 기대값 '+sgn(b.ev)+'.'+tail;
+}
+function renderDetail(){
+  const box=$('#detail'); const m=ST.matches.find(x=>x.id===ST.sel);
+  if(!m){ box.innerHTML='<div class="card"><div class="empty">왼쪽에서 경기를 선택하면 배당 비교와 근거가 나온다.</div></div>'; return; }
+  const r=m._r||{error:'계산 전'}, M=MARKETS[m.market];
+  if(r.error){ box.innerHTML='<div class="card"><div class="empty">'+r.error+'</div></div>'; return; }
+  const impl = m.betman&&m.betman.every(x=>x>1) ? DEVIG[ST.devig](m.betman.map(Number)) : null;
+  const rows = [];
+  rows.push(['베트맨 (현재)', M.labels.map((_,i)=>od(+m.betman[i])), '']);
+  rows.push(['토토스캐너 적정배당', r.fairOdds.map(od), 'hl']);
+  if(r.pRef) rows.push(['해외 컨센서스', r.pRef.map(p=>od(1/p)), '']);
+  if(r.pModel) rows.push(['자체 모델 (DC)', r.pModel.map(p=>od(1/p)), '']);
+  if(impl) rows.push(['베트맨 내재확률', impl.map(p=>pct(p)), '']);
+
+  const evRow = '<tr><td>기대값 (EV)</td>'+r.picks.map(p=>
+    p.ev==null?'<td>—</td>':'<td class="'+(p.ev>0?'pos':'neg')+'">'+sgn(p.ev)+'</td>').join('')+'</tr>'
+    +'<tr><td>EV 80% 하한</td>'+r.picks.map(p=>
+    p.evLo==null?'<td>—</td>':'<td class="'+(p.evLo>0?'pos':'neg')+'">'+sgn(p.evLo)+'</td>').join('')+'</tr>';
+
+  const g = r.best?GR[r.best.grade]:GR.NODATA;
+  const band = r.best&&r.best.band;
+  const otherMarkets = r.M ? (()=>{
+    const o25=mkOU(r.M,2.5), o15=mkOU(r.M,1.5), o35=mkOU(r.M,3.5),
+          su=mkSum(r.M,ST.zeroEven), h1=mkHandicap(r.M,-1), hp1=mkHandicap(r.M,1), x=mk1x2(r.M);
+    const line=(n,a)=>'<tr><td>'+n+'</td>'+a.map(v=>'<td>'+od(1/v)+'</td>').join('')+'</tr>';
+    return '<table><thead><tr><th>파생 마켓</th><th>①</th><th>②</th><th>③</th></tr></thead><tbody>'
+      + line('승 / 무 / 패', x)
+      + line('핸디 −1.0 (승/무/패)', h1)
+      + line('핸디 +1.0 (승/무/패)', hp1)
+      + '<tr><td>언더/오버 1.5</td><td>'+od(1/o15[0])+'</td><td>'+od(1/o15[1])+'</td><td></td></tr>'
+      + '<tr><td>언더/오버 2.5</td><td>'+od(1/o25[0])+'</td><td>'+od(1/o25[1])+'</td><td></td></tr>'
+      + '<tr><td>언더/오버 3.5</td><td>'+od(1/o35[0])+'</td><td>'+od(1/o35[1])+'</td><td></td></tr>'
+      + '<tr><td>SUM 홀/짝</td><td>'+od(1/su[0])+'</td><td>'+od(1/su[1])+'</td><td></td></tr>'
+      + '</tbody></table>';
+  })() : '';
+  const top = r.M ? (()=>{ const a=[];
+    for(let h=0;h<=5;h++) for(let x=0;x<=5;x++) a.push([h,x,r.M[h][x]]);
+    return a.sort((p,q)=>q[2]-p[2]).slice(0,6).map(([h,x,p])=>
+      '<div class="kv"><span class="num">'+h+' : '+x+'</span><b>'+pct(p)+'</b></div>').join('');
+  })() : '';
+
+  box.innerHTML =
+  '<div style="display:flex;flex-direction:column;gap:14px">'+
+   '<div class="card"><h2>'+teamLabel(m,'home')+' vs '+teamLabel(m,'away')+
+     '<span class="lbl">'+LGN(m.league)+' · 항목 '+String(m.no).padStart(3,'0')+'</span></h2>'+
+    '<div class="pad">'+
+     '<div class="scroll"><table><thead><tr><th></th>'+
+       M.labels.map(l=>'<th>'+l+'</th>').join('')+'</tr></thead><tbody>'+
+       rows.map(([n,v,c])=>'<tr class="'+c+'"><td>'+n+'</td>'+v.map(x=>'<td>'+x+'</td>').join('')+'</tr>').join('')+
+       evRow+'</tbody></table></div>'+
+     '<hr><div class="rowf" style="margin-bottom:8px">'+
+       '<span class="badge '+g[0]+'">'+g[1]+' '+g[2]+'</span>'+
+       (r.source==='market'?'<span class="badge b-flag">해외 컨센서스 기준</span>':
+        r.source==='blend'?'<span class="badge b-flag">앙상블 w_mkt '+ST.wMkt.toFixed(2)+'</span>':
+        '<span class="badge b-bad">모델 단독 — 백테스트 ROI −12%</span>')+
+       (r.over!=null?'<span class="badge b-info">마진 '+pct(r.over)+'</span>':'')+
+     '</div>'+
+     '<p class="note" style="margin:0">'+reasonText(m,r)+'</p>'+
+     (band? '<p class="note" style="margin:8px 0 0">배당 '+od(r.best.odds)+'는 <b>'+band.b+
+        '</b> 구간이다. 이 구간의 과거 실측 평균 EV는 <b class="num">'+band.ev.toFixed(1)+
+        '%</b>, 실현 ROI <b class="num">'+band.roi.toFixed(1)+'%</b> (n='+band.n.toLocaleString()+').</p>':'')+
+     '<hr><div class="rowf">'+
+       '<button class="btn pri sm" id="savePick">이 픽 기록에 저장</button>'+
+       '<button class="btn sm" id="copyPick">조합용 텍스트 복사</button>'+
+       '<button class="btn sm" id="delMatch">경기 삭제</button></div>'+
+    '</div></div>'+
+
+   '<div class="card"><h2>모델 세부 <span class="lbl">Dixon-Coles</span></h2><div class="pad">'+
+     (r.seed? '<div class="kv"><span>기대득점 λ (홈)</span><b>'+r.seed.lam.toFixed(2)+'</b></div>'+
+              '<div class="kv"><span>기대득점 ν (원정)</span><b>'+r.seed.nu.toFixed(2)+'</b></div>'+
+              '<div class="kv"><span>저득점 보정 ρ</span><b>'+r.seed.rho.toFixed(3)+'</b></div>' :'')+
+     '<div class="grid g2" style="margin-top:12px"><div class="f"><label>홈 공격 보정 %</label>'+
+       '<input class="num" id="adjHA" value="'+((m.adj&&m.adj.hAtt||0)*100).toFixed(0)+'"></div>'+
+       '<div class="f"><label>원정 공격 보정 %</label>'+
+       '<input class="num" id="adjAA" value="'+((m.adj&&m.adj.aAtt||0)*100).toFixed(0)+'"></div></div>'+
+     '<p class="note" style="margin:8px 0 0">주전 결장·일정 과밀 등을 기대득점에 직접 반영한다. 핵심 공격수 결장이면 −8~−15% 정도.</p>'+
+     '<hr><div class="lbl" style="margin-bottom:6px">스코어 확률 상위</div>'+top+
+   '</div></div>'+
+
+   (otherMarkets? '<div class="card"><h2>같은 행렬에서 파생된 다른 마켓</h2><div class="pad">'+
+     '<p class="note" style="margin:0 0 10px">모든 마켓을 하나의 스코어 확률행렬에서 뽑으므로 승무패·핸디·언오버 사이에 모순이 없다.</p>'+
+     '<div class="scroll">'+otherMarkets+'</div></div></div>' : '')+
+  '</div>';
+
+  $('#delMatch').onclick=()=>{ ST.matches=ST.matches.filter(x=>x.id!==m.id); ST.sel=null; save(); render(); };
+  $('#savePick').onclick=()=>savePick(m,r);
+  $('#copyPick').onclick=()=>{
+    const t=String(m.no).padStart(3,'0')+' '+MARKETS[m.market].full[(r.best||{i:0}).i];
+    navigator.clipboard?.writeText(t).then(()=>toast('복사: '+t), ()=>toast(t)); };
+  ['adjHA','adjAA'].forEach(id=>{ $('#'+id).onchange=e=>{
+    m.adj=m.adj||{}; m.adj[id==='adjHA'?'hAtt':'aAtt'] = (+e.target.value||0)/100; save(); render(); }; });
+}
+
+function renderBias(){
+  const t=$('#tBias'); if(t.dataset.done) return; t.dataset.done='1';
+  t.innerHTML='<thead><tr><th>베트맨 배당 구간</th><th>픽 수</th><th>평균 EV</th><th>실현 ROI</th><th></th></tr></thead><tbody>'+
+    DATA.backtest.bias.map(b=>{
+      const w=Math.min(100, Math.abs(b.roi)/55*100);
+      return '<tr><td>'+b.b+'</td><td>'+b.n.toLocaleString()+'</td>'+
+        '<td class="'+(b.ev>-3?'pos':'neg')+'">'+b.ev.toFixed(1)+'%</td>'+
+        '<td class="'+(b.roi>-3?'pos':'neg')+'">'+b.roi.toFixed(1)+'%</td>'+
+        '<td style="width:110px"><div class="bar"><i style="width:'+w+'%;background:'+
+          (b.roi>-3?'var(--good)':b.roi>-20?'var(--warn)':'var(--bad)')+'"></i></div></td></tr>';
+    }).join('')+'</tbody>';
+}
+
+/* ═══════════════ 경기 입력 ═══════════════ */
+function fillTeams(){
+  const lg=$('#iLeague').value, T=DATA.leagues[lg].teams;
+  const keys=Object.keys(T).sort((a,b)=>T[a].ko.localeCompare(T[b].ko,'ko'));
+  ['#iHome','#iAway'].forEach((s,j)=>{
+    const el=$(s); el.innerHTML=keys.map(k=>'<option value="'+k+'">'+T[k].ko+(T[k].new?' ·신':'')+'</option>').join('');
+    el.selectedIndex = j?1:0;
+  });
+}
+function fillOddsInputs(){
+  const M=MARKETS[$('#iMarket').value];
+  $('#selHint').textContent = '— ' + M.full.join(' / ');
+  $('#wrapBet').innerHTML = M.full.map((l,i)=>
+    '<div class="f"><label>'+l+'</label><input class="num bet" data-i="'+i+'" inputmode="decimal"></div>').join('');
+  $('#wrapRef').innerHTML = M.full.map((l,i)=>
+    '<div class="f"><label>'+l+'</label><input class="num ref" data-i="'+i+'" inputmode="decimal"></div>').join('');
+  $('#wrapBet').style.gridTemplateColumns = M.n===2?'1fr 1fr':'1fr 1fr 1fr';
+  $('#wrapRef').style.gridTemplateColumns = M.n===2?'1fr 1fr':'1fr 1fr 1fr';
+  const needsLine = !!M.line;
+  $('#wrapLine').style.display = needsLine?'':'none';
+  if(needsLine){ $('#lineHint').textContent = '— '+M.line;
+    $('#iLine').value = $('#iMarket').value==='OU'?'2.5':'-1.0'; }
+}
+function addMatch(m){
+  m.id = 'm'+Math.random().toString(36).slice(2,9);
+  ST.matches.push(m); ST.matches.sort((a,b)=>a.no-b.no); save();
+}
+$('#addMatch').onclick = ()=>{
+  const mk=$('#iMarket').value, M=MARKETS[mk];
+  const get=c=>[...document.querySelectorAll('#p-input .'+c)].map(x=>parseFloat(x.value)||0).slice(0,M.n);
+  const home=$('#iHome').value, away=$('#iAway').value;
+  if(home===away) return toast('홈과 원정이 같다');
+  const bet=get('bet');
+  if(!bet.every(x=>x>1)) return toast('베트맨 배당을 모두 넣어라 (1 초과)');
+  const ref=get('ref');
+  addMatch({no:+$('#iNo').value||1, league:$('#iLeague').value, home, away, market:mk,
+            line: M.line? (parseFloat($('#iLine').value)||0) : null,
+            kick:$('#iKick').value||'', betman:bet, ref: ref.every(x=>x>1)?ref:null, adj:{}});
+  $('#iNo').value = (+$('#iNo').value||1)+1;
+  [...document.querySelectorAll('#p-input .bet, #p-input .ref')].forEach(x=>x.value='');
+  toast('추가했다'); render(); go('round');
+};
+$('#clearAll').onclick = ()=>{ if(!ST.matches.length) return;
+  ST.matches=[]; ST.sel=null; save(); render(); toast('비웠다'); };
+
+const DEMO = [
+ // 아스널 vs 에버턴 — 승무패·언오버에만 해외 배당이 있고, 핸디·SUM은 거기서 파생된다
+ {no:1,league:'E0',home:'Arsenal',away:'Everton',kick:'2026-09-12T23:00',market:'1X2',line:null,betman:[1.40,4.30,7.00],ref:[1.36,5.20,9.50]},
+ {no:2,league:'E0',home:'Arsenal',away:'Everton',kick:'2026-09-12T23:00',market:'HANDICAP',line:-1,betman:[2.30,3.60,2.75],ref:null},
+ {no:3,league:'E0',home:'Arsenal',away:'Everton',kick:'2026-09-12T23:00',market:'OU',line:2.5,betman:[1.95,1.75],ref:[2.05,1.80]},
+ {no:4,league:'E0',home:'Arsenal',away:'Everton',kick:'2026-09-12T23:00',market:'SUM',line:null,betman:[1.81,1.79],ref:null},
+ // 레알 마드리드 vs 오사수나 — 전형적인 '가치 없음' 경기
+ {no:5,league:'SP1',home:'Real Madrid',away:'Osasuna',kick:'2026-09-13T04:00',market:'1X2',line:null,betman:[1.25,4.80,9.00],ref:[1.28,6.00,11.0]},
+ {no:6,league:'SP1',home:'Real Madrid',away:'Osasuna',kick:'2026-09-13T04:00',market:'HANDICAP',line:-1,betman:[1.95,3.70,3.40],ref:null},
+ {no:7,league:'SP1',home:'Real Madrid',away:'Osasuna',kick:'2026-09-13T04:00',market:'OU',line:2.5,betman:[1.70,2.00],ref:null},
+ {no:8,league:'SP1',home:'Real Madrid',away:'Osasuna',kick:'2026-09-13T04:00',market:'SUM',line:null,betman:[1.81,1.79],ref:null},
+ // 인테르 vs 토리노
+ {no:9,league:'I1',home:'Inter',away:'Torino',kick:'2026-09-13T01:00',market:'1X2',line:null,betman:[1.60,3.85,5.30],ref:[1.55,4.20,6.20]},
+ {no:10,league:'I1',home:'Inter',away:'Torino',kick:'2026-09-13T01:00',market:'HANDICAP',line:-1,betman:[2.85,3.45,2.25],ref:null},
+ {no:11,league:'I1',home:'Inter',away:'Torino',kick:'2026-09-13T01:00',market:'OU',line:2.5,betman:[1.85,1.85],ref:null},
+ {no:12,league:'I1',home:'Inter',away:'Torino',kick:'2026-09-13T01:00',market:'SUM',line:null,betman:[1.81,1.79],ref:null},
+ // 파리 생제르맹 vs 앙제 — 저배당 정배 구간
+ {no:13,league:'F1',home:'Paris SG',away:'Angers',kick:'2026-09-13T02:00',market:'1X2',line:null,betman:[1.20,6.00,11.0],ref:[1.18,7.50,15.0]},
+ {no:14,league:'F1',home:'Paris SG',away:'Angers',kick:'2026-09-13T02:00',market:'HANDICAP',line:-1,betman:[1.55,4.30,5.00],ref:null},
+ {no:15,league:'F1',home:'Paris SG',away:'Angers',kick:'2026-09-13T02:00',market:'OU',line:2.5,betman:[2.35,1.50],ref:null}
+];
+$('#loadDemo').onclick = ()=>{
+  ST.matches=[]; DEMO.forEach(d=>addMatch(JSON.parse(JSON.stringify({...d,adj:{},kick:''}))));
+  ST.round='예시 회차'; save(); render(); go('round'); toast('예시 데이터를 불러왔다 — 실제 배당이 아니다');
+};
+
+/* ── 붙여넣기 파서 ── */
+const ALIAS={};
+Object.entries(DATA.leagues).forEach(([lg,L])=>Object.entries(L.teams).forEach(([k,v])=>{
+  ALIAS[(lg+'|'+k).toLowerCase()]=k; ALIAS[(lg+'|'+v.ko).toLowerCase()]=k;
+  ALIAS[(lg+'|'+v.ko.replace(/\s/g,'')).toLowerCase()]=k; }));
+const LGALIAS={epl:'E0',e0:'E0','프리미어리그':'E0','프리미어':'E0',sp1:'SP1','라리가':'SP1',
+  i1:'I1','세리에a':'I1','세리에':'I1',d1:'D1','분데스리가':'D1','분데스':'D1',f1:'F1','리그1':'F1','리그앙':'F1'};
+const MKALIAS={'1x2':'1X2','일반':'1X2','승무패':'1X2','handicap':'HANDICAP','핸디':'HANDICAP',
+  '핸디캡':'HANDICAP','ou':'OU','언오버':'OU','언더오버':'OU','sum':'SUM','홀짝':'SUM'};
+function parseBulk(text){
+  const out=[], errs=[];
+  text.split('\n').map(s=>s.trim()).filter(Boolean).forEach((ln,li)=>{
+    const [lhs,rhs] = ln.split('/');
+    const tk = lhs.trim().split(/[\s,\t]+/);
+    try{
+      const no=parseInt(tk[0],10);
+      const lg=LGALIAS[(tk[1]||'').toLowerCase()];
+      if(!lg) throw '리그를 못 읽음: '+tk[1];
+      let mkIdx=-1;
+      for(let j=2;j<tk.length;j++) if(MKALIAS[tk[j].toLowerCase()]){ mkIdx=j; break; }
+      if(mkIdx<0) throw '게임유형(일반/핸디/언오버/SUM)이 없음';
+      const teams=tk.slice(2,mkIdx);
+      let H=null,A=null;
+      for(let s=1;s<teams.length;s++){
+        const h=ALIAS[(lg+'|'+teams.slice(0,s).join(' ')).toLowerCase()];
+        const a=ALIAS[(lg+'|'+teams.slice(s).join(' ')).toLowerCase()];
+        if(h&&a){ H=h; A=a; break; }
+      }
+      if(!H||!A) throw '팀 이름을 못 찾음: '+teams.join(' ');
+      const mk=MKALIAS[tk[mkIdx].toLowerCase()], M=MARKETS[mk];
+      let p=mkIdx+1, line=null;
+      if(M.line){ line=parseFloat(tk[p]); if(isNaN(line)) throw '기준선이 없음'; p++; }
+      const bet=tk.slice(p,p+M.n).map(Number);
+      if(bet.length<M.n||!bet.every(x=>x>1)) throw '베트맨 배당 '+M.n+'개가 필요';
+      let ref=null;
+      if(rhs){ const rr=rhs.trim().split(/[\s,\t]+/).map(Number);
+        if(rr.length>=M.n && rr.slice(0,M.n).every(x=>x>1)) ref=rr.slice(0,M.n); }
+      out.push({no:isNaN(no)?out.length+1:no, league:lg, home:H, away:A, market:mk, line, betman:bet, ref, adj:{}, kick:''});
+    }catch(e){ errs.push((li+1)+'행: '+e); }
+  });
+  return {out,errs};
+}
+function importCollectorJSON(txt){
+  let d; try{ d = JSON.parse(txt); }catch(e){ return null; }
+  if(!d || !Array.isArray(d.matches)) return null;
+  const rows = d.matches.filter(m=> m.betman && m.betman.every(x=>+x>1));
+  ST.matches = [];
+  rows.forEach(m=> addMatch({
+    no:+m.no||0, league:m.league, home:m.home, away:m.away,
+    homeKo:m.homeKo||null, awayKo:m.awayKo||null,
+    market:m.market, line: m.line==null?null:+m.line,
+    betman:m.betman.map(Number), ref:null, adj:{},
+    kick:(m.kick||'').slice(0,16), single:String(m.single||'')
+  }));
+  // 수집기가 준 베트맨 배당 변동 이력 → 스냅샷 기준선으로 사용
+  if(Array.isArray(d.oddsChanges) && d.oddsChanges.length){
+    d.oddsChanges.forEach(c=>{
+      const m = ST.matches.find(x=>x.no===c.no);
+      if(!m || !c.before) return;
+      const b = c.before.filter(v=>v!=null && v>0).map(v=>v/100);
+      if(b.length===(MARKETS[m.market].n)) ST.snap[snapKey(m)] = {betman:b, ref:null, at:'수집기 이력'};
+    });
+  }
+  ST.round = (d.round? d.round+'회차' : '') + (d.capturedAt? ' · '+d.capturedAt.slice(5,16).replace('T',' ') : '');
+  ST.sel = ST.matches.length? ST.matches[0].id : null;
+  save();
+  return {n:rows.length, skipped:d.matches.length-rows.length, changes:(d.oddsChanges||[]).length};
+}
+$('#bulkGo').onclick = ()=>{
+  const raw = $('#bulk').value.trim();
+  if(raw.startsWith('{')){
+    const r = importCollectorJSON(raw);
+    if(!r){ $('#bulkMsg').innerHTML='<span style="color:var(--bad)">JSON을 읽지 못했다. latest_import.json 내용을 통째로 붙여넣어라.</span>'; return; }
+    render();
+    $('#bulkMsg').innerHTML = '<b>'+r.n+'행 불러왔다.</b>'+
+      (r.skipped?' 배당 미공시 '+r.skipped+'행은 건너뛰었다.':'')+
+      (r.changes?' 베트맨 변동 이력 '+r.changes+'건을 스냅샷 기준으로 잡았다.':'');
+    go('round'); return;
+  }
+  const {out,errs}=parseBulk(raw);
+  out.forEach(addMatch); render();
+  $('#bulkMsg').innerHTML = (out.length?'<b>'+out.length+'경기 추가.</b> ':'')+
+    (errs.length?'<span style="color:var(--bad)">'+errs.join('<br>')+'</span>':'');
+  if(out.length) go('round');
+};
+$('#snapSave').onclick = takeSnapshot;
+$('#bulkSample').onclick = ()=>{ $('#bulk').value =
+`1 EPL 아스널 에버턴 일반 1.40 4.30 7.00 / 1.36 5.20 9.50
+2 라리가 레알마드리드 오사수나 일반 1.25 4.80 9.00 / 1.28 6.00 11.0
+3 세리에A 인테르 토리노 핸디 -1.0 2.00 3.50 3.30 / 1.95 3.60 3.90
+4 분데스 도르트문트 마인츠 언오버 2.5 1.95 1.75 / 2.05 1.80
+5 리그1 파리생제르맹 앙제 일반 1.20 6.00 11.0 / 1.18 7.50 15.0`; };
+
+/* ═══════════════ §6.6 조합 최적화 ═══════════════ */
+const RANGES=[[1.1,1.5],[1.5,2.0],[2.0,2.5],[2.5,3.0],[3.0,5.0],[5.0,10.0]];
+$('#ranges').innerHTML = RANGES.map(([a,b])=>
+  '<button class="btn sm" data-r="'+a+','+b+'">'+a.toFixed(1)+'–'+b.toFixed(1)+'</button>').join('');
+$('#ranges').onclick = e=>{ const b=e.target.closest('[data-r]'); if(!b) return;
+  const [a,c]=b.dataset.r.split(','); $('#cMin').value=a; $('#cMax').value=c;
+  $$('#ranges .btn').forEach(x=>x.setAttribute('aria-pressed', String(x===b))); runCombo(); };
+
+function candidates(pool){
+  computeAll();
+  const out=[];
+  ST.groups.forEach(G=>{
+    if(G.B && (G.B.error || G.B.source==='model')) return;   // 등급 없는 경기는 조합에서 뺀다
+    G.rows.forEach(m=>{
+      const r=m._r; if(!r || r.error) return;
+      r.picks.forEach(p=>{ if(p.odds==null) return;
+        out.push({gkey:G.key, no:m.no,
+                  label:(G.homeKo||koTeam(G.league,G.home))+' vs '+(G.awayKo||koTeam(G.league,G.away)),
+                  sel:MKLABEL(m)+' · '+MARKETS[m.market].full[p.i],
+                  odds:p.odds, p:p.p, pLo:p.pLo, ev:p.ev, evLo:p.evLo, grade:p.grade}); });
+    });
+  });
+  out.sort((a,b)=>b.evLo-a.evLo);
+  // 베트맨 규칙: 같은 경기의 서로 다른 유형끼리는 조합 불가 → 경기당 1픽
+  const seen=new Set(), uniq=[];
+  out.forEach(p=>{ if(seen.has(p.gkey)) return; seen.add(p.gkey); uniq.push(p); });
+  return uniq.slice(0, pool);
+}
+function runCombo(){
+  const lo=parseFloat($('#cMin').value)||1, hi=parseFloat($('#cMax').value)||99;
+  const maxL=clamp(parseInt($('#cLegs').value)||4,2,6);
+  const C=candidates(clamp(parseInt($('#cPool').value)||14,2,18));
+  const out=$('#comboOut'); out.innerHTML='';
+  if(C.length<2){ $('#comboMsg').textContent='후보 픽이 2개 미만이다. 경기를 먼저 입력해라.'; return; }
+  const found=[];
+  const rec=(start, cur)=>{
+    if(cur.length>=2){
+      const O=cur.reduce((s,p)=>s*p.odds,1);
+      if(O>=lo && O<hi){
+        const P=cur.reduce((s,p)=>s*p.p,1), PL=cur.reduce((s,p)=>s*p.pLo,1);
+        found.push({legs:cur.slice(), odds:O, p:P, ev:P*O-1, evLo:PL*O-1});
+      }
+      if(cur.reduce((s,p)=>s*p.odds,1) >= hi) return;
+    }
+    if(cur.length>=maxL) return;
+    for(let i=start;i<C.length;i++){ cur.push(C[i]); rec(i+1,cur); cur.pop(); }
+  };
+  rec(0,[]);
+  if(!found.length){
+    $('#comboMsg').textContent='';
+    out.innerHTML='<div class="card"><div class="empty">'+lo.toFixed(2)+'–'+hi.toFixed(2)+
+      ' 구간에 만들 수 있는 조합이 없다.<br>배당 범위를 넓히거나 최대 경기 수를 늘려봐라.</div></div>';
+    return;
+  }
+  const safe = found.slice().sort((a,b)=>b.p-a.p)[0];
+  const value= found.slice().sort((a,b)=>b.evLo-a.evLo)[0];
+  const bal  = found.slice().sort((a,b)=> (b.ev*0.5+b.p*0.5)-(a.ev*0.5+a.p*0.5))[0];
+  $('#comboMsg').textContent = found.length.toLocaleString()+'개 조합을 평가했다.';
+  [['🛡','안정형','적중확률이 가장 높은 조합',safe],
+   ['💎','가치형','기대값 하한이 가장 높은 조합',value],
+   ['⚖','균형형','기대값과 적중확률의 절충',bal]].forEach(([ic,name,desc,c])=>{
+    if(!c) return;
+    const taxed = c.odds>100;
+    const el=document.createElement('div'); el.className='combo';
+    el.innerHTML =
+      '<header><span style="font-size:15px">'+ic+'</span><b style="font-size:14px">'+name+'</b>'+
+        '<span class="big" style="margin-left:auto">'+c.odds.toFixed(2)+'</span></header>'+
+      '<div class="lbl">'+desc+'</div>'+
+      '<div>'+c.legs.map(l=>'<div class="leg"><span class="num">'+String(l.no).padStart(3,'0')+'</span>'+
+        '<span>'+l.label+'<br><span style="color:var(--muted);font-size:11.5px">'+l.sel+'</span></span>'+
+        '<b>'+od(l.odds)+'</b></div>').join('')+'</div>'+
+      '<div class="kv"><span>적중 확률</span><b>'+pct(c.p)+'</b></div>'+
+      '<div class="kv"><span>조합 기대값</span><b style="color:'+(c.ev>0?'var(--good)':'var(--muted)')+'">'+sgn(c.ev)+'</b></div>'+
+      '<div class="kv"><span>기대값 80% 하한</span><b style="color:'+(c.evLo>0?'var(--good)':'var(--muted)')+'">'+sgn(c.evLo)+'</b></div>'+
+      '<p class="note" style="margin:0">'+(taxed?'배당 100배 초과 — 과세 대상이 될 수 있다. ':'')+
+        '조합은 각 픽의 마진이 곱해져 기대값이 낮아진다.</p>'+
+      '<button class="btn sm">조합 복사</button>';
+    el.querySelector('button').onclick=()=>{
+      const t=c.legs.map(l=>String(l.no).padStart(3,'0')+' '+l.sel).join(' / ');
+      navigator.clipboard?.writeText(t).then(()=>toast('복사: '+t),()=>toast(t)); };
+    out.appendChild(el);
+  });
+}
+$('#runCombo').onclick = runCombo;
+
+/* ═══════════════ 기록 · 정산 (§6.7) ═══════════════ */
+/* 저장소는 세 가지 중 되는 걸 쓴다:
+   ① Supabase  — GitHub Pages 에 올렸을 때. 둘이 기록을 공유한다
+   ② Claude db — Artifact 로 열었을 때
+   ③ localStorage — 둘 다 안 되면 이 브라우저에만 */
+let DB=null, SB=null;
+const LKEY='ts_picks_v1';
+
+const SBCFG = (typeof window!=='undefined' && window.TS_CONFIG) || {};
+function sbReady(){ return !!(SBCFG.supabaseUrl && SBCFG.supabaseKey
+  && !/YOUR_|여기에/.test(SBCFG.supabaseUrl+SBCFG.supabaseKey)); }
+async function sbFetch(path, opts){
+  const url = SBCFG.supabaseUrl.replace(/\/$/,'') + '/rest/v1/' + path;
+  const r = await fetch(url, {...opts, headers:{
+    'apikey':SBCFG.supabaseKey, 'Authorization':'Bearer '+SBCFG.supabaseKey,
+    'Content-Type':'application/json', 'Prefer':'return=representation',
+    ...(opts&&opts.headers||{})}});
+  if(!r.ok) throw new Error('supabase '+r.status+' '+(await r.text()).slice(0,120));
+  const t = await r.text();
+  return t ? JSON.parse(t) : null;
+}
+const lsPicks = ()=>{ try{ return JSON.parse(localStorage.getItem(LKEY)||'[]'); }catch(e){ return []; } };
+const lsSet = a =>{ try{ localStorage.setItem(LKEY, JSON.stringify(a)); }catch(e){} };
+
+async function loadPicks(){
+  if(SB){ try{
+    ST.picks = await sbFetch('picks?select=*&order=savedAt.desc&limit=300');
+    return; }catch(e){ console.warn(e); } }
+  if(DB){ try{
+    const snap = await DB.collection('picks').orderBy('savedAt','desc').limit(300).get();
+    ST.picks = snap.docs.map(d=> ({...d.data(), id:d.id}));
+    return; }catch(e){ /* 폴백 */ } }
+  ST.picks = lsPicks();
+}
+async function savePick(m,r){
+  const b=r.best; if(!b||b.odds==null) return toast('배당이 없다');
+  const rec = { id:'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    savedAt:new Date().toISOString(), round:ST.round||'',
+    league:m.league, home:m.home, away:m.away, market:m.market, line:m.line,
+    no:m.no, selIdx:b.i, sel:MARKETS[m.market].full[b.i],
+    odds:b.odds, p:b.p, ev:b.ev, evLo:b.evLo, grade:b.grade,
+    source:r.source, result:'', closingOdds:null, clv:null };
+  let ok=false;
+  if(SB){ try{ await sbFetch('picks', {method:'POST', body:JSON.stringify(rec)}); ok=true; }
+          catch(e){ console.warn(e); } }
+  if(!ok && DB){ try{ await DB.doc('picks/'+rec.id).set(rec); ok=true; }catch(e){} }
+  if(!ok) lsSet([rec,...lsPicks()]);
+  await loadPicks(); renderLog(); toast('기록에 저장했다');
+}
+async function updatePick(id, patch){
+  const i=ST.picks.findIndex(p=>p.id===id); if(i<0) return;
+  Object.assign(ST.picks[i], patch);
+  let ok=false;
+  if(SB){ try{ await sbFetch('picks?id=eq.'+encodeURIComponent(id),
+      {method:'PATCH', body:JSON.stringify(patch)}); ok=true; }catch(e){ console.warn(e); } }
+  if(!ok && DB){ try{ await DB.doc('picks/'+id).update(patch); ok=true; }catch(e){} }
+  if(!ok) lsSet(ST.picks);
+  renderLog();
+}
+async function delPick(id){
+  ST.picks = ST.picks.filter(p=>p.id!==id);
+  let ok=false;
+  if(SB){ try{ await sbFetch('picks?id=eq.'+encodeURIComponent(id), {method:'DELETE'}); ok=true; }
+          catch(e){ console.warn(e); } }
+  if(!ok && DB){ try{ await DB.doc('picks/'+id).delete(); ok=true; }catch(e){} }
+  if(!ok) lsSet(ST.picks);
+  renderLog();
+}
+function renderLog(){
+  const L=$('#logList');
+  if(!ST.picks.length){ L.innerHTML='<div class="empty">저장된 픽이 없다. 회차 상세에서 <b>이 픽 기록에 저장</b>을 눌러라.</div>'; }
+  else L.innerHTML = '<div class="slip">'+ST.picks.map(p=>{
+    const g=GR[p.grade]||GR.INFO;
+    const res = p.result==='W'?'<span class="badge b-rec">적중</span>'
+              : p.result==='L'?'<span class="badge b-bad">미적중</span>'
+              : p.result==='V'?'<span class="badge b-info">취소</span>'
+              : '<span class="badge b-info">미정산</span>';
+    return '<div class="row" data-p="'+p.id+'" tabindex="0" role="button" aria-selected="'+(ST.settleId===p.id)+'">'+
+      '<div class="no">'+String(p.no).padStart(3,'0')+'</div>'+
+      '<div class="tm"><div class="vs">'+koTeam(p.league,p.home)+' vs '+koTeam(p.league,p.away)+'</div>'+
+        '<div class="sub"><span>'+p.sel+'</span><span>'+p.savedAt.slice(0,10)+'</span>'+
+        (p.clv!=null?'<span>CLV '+sgn(p.clv)+'</span>':'')+'</div></div>'+
+      '<div class="oz"><div class="o"><small>배당</small>'+od(p.odds)+'</div>'+
+        '<div class="o"><small>EV</small>'+sgn(p.ev,1)+'</div></div>'+
+      '<div class="verdict"><span class="badge '+g[0]+'">'+g[1]+' '+g[2]+'</span>'+res+'</div></div>';
+  }).join('')+'</div>';
+  L.querySelectorAll('[data-p]').forEach(el=> el.onclick=()=>{ ST.settleId=el.dataset.p; renderLog(); });
+
+  // 성적 타일
+  const done = ST.picks.filter(p=>p.result==='W'||p.result==='L');
+  const ret = done.map(p=> p.result==='W'? p.odds-1 : -1);
+  const roi = ret.length? ret.reduce((a,b)=>a+b,0)/ret.length : null;
+  const hit = done.length? done.filter(p=>p.result==='W').length/done.length : null;
+  const clvs= ST.picks.filter(p=>p.clv!=null).map(p=>p.clv);
+  const clv = clvs.length? clvs.reduce((a,b)=>a+b,0)/clvs.length : null;
+  const tile=(l,v,cls,sub)=>'<div class="tile"><div class="lbl">'+l+'</div><div class="v '+(cls||'')+'">'+v+
+    '</div>'+(sub?'<div class="lbl" style="margin-top:3px">'+sub+'</div>':'')+'</div>';
+  $('#logStats').innerHTML =
+    tile('저장 픽', ST.picks.length,'', '정산 '+done.length+'건')+
+    tile('적중률', hit==null?'—':pct(hit,0),'')+
+    tile('ROI', roi==null?'—':sgn(roi), roi==null?'':(roi>0?'pos':'neg'), ret.length<30?'표본 부족':'')+
+    tile('평균 CLV', clv==null?'—':sgn(clv), clv==null?'':(clv>0?'pos':'neg'), '핵심 지표');
+
+  renderSelfCalib(done);
+
+  // 정산 입력
+  const sp = ST.picks.find(p=>p.id===ST.settleId);
+  const S=$('#settleBox');
+  if(!sp){ S.innerHTML='저장된 픽을 눌러 선택해라.'; return; }
+  const M=MARKETS[sp.market];
+  S.innerHTML =
+    '<div class="lbl" style="margin-bottom:6px">'+koTeam(sp.league,sp.home)+' vs '+koTeam(sp.league,sp.away)+' · '+sp.sel+'</div>'+
+    '<div class="chips" style="margin-bottom:10px">'+
+      [['W','적중'],['L','미적중'],['V','취소'],['','미정산']].map(([v,n])=>
+        '<button class="btn sm" data-res="'+v+'" aria-pressed="'+(sp.result===v)+'">'+n+'</button>').join('')+
+    '</div>'+
+    '<div class="fl">마감 직전 해외 배당 ('+M.full.join(' / ')+') — CLV 계산용</div>'+
+    '<div class="grid '+(M.n===2?'g2':'g3')+'" style="margin:6px 0 8px">'+
+      M.full.map((l,i)=>'<input class="num cl" data-i="'+i+'" placeholder="'+l+'" value="'+
+        ((sp.closingOdds&&sp.closingOdds[i])||'')+'">').join('')+'</div>'+
+    '<div class="rowf"><button class="btn pri sm" id="doClv">CLV 계산</button>'+
+      '<button class="btn sm" id="doDel">삭제</button></div>';
+  S.querySelectorAll('[data-res]').forEach(b=> b.onclick=()=>
+    updatePick(sp.id,{result: b.dataset.res}));
+  $('#doClv').onclick = ()=>{
+    const o=[...S.querySelectorAll('.cl')].map(x=>parseFloat(x.value)||0);
+    if(!o.every(x=>x>1)) return toast('마감 배당을 모두 넣어라');
+    const pc = DEVIG[ST.devig](o);
+    updatePick(sp.id,{closingOdds:o, clv: pc[sp.selIdx]*sp.odds-1});
+    toast('CLV = ' + sgn(pc[sp.selIdx]*sp.odds-1));
+  };
+  $('#doDel').onclick = ()=>{ ST.settleId=null; delPick(sp.id); };
+}
+
+/* ── 자체 채점: 이 앱이 "60%"라고 한 픽들이 실제로 60% 맞았는가 ── */
+function renderSelfCalib(done){
+  const el=$('#selfCalib');
+  const n=done.length;
+  if(n<5){
+    el.innerHTML='<p class="note" style="margin:0">정산된 픽이 <b>'+n+'개</b>다. '+
+      '예측이 맞았는지 따지려면 최소 30개, 제대로 보려면 100개는 있어야 한다.<br>'+
+      '그전까지 나오는 숫자는 전부 운이다 — 여기 표시하지 않는 이유다.</p>'+
+      '<p class="note" style="margin:8px 0 0">경기가 끝나면 저장한 픽을 눌러 <b>적중/미적중</b>을 찍어라. '+
+      '가능하면 마감 직전 해외 배당도 넣어 CLV를 남겨라.</p>';
+    return;
+  }
+  // 예측확률 구간별 실제 적중률
+  const bins=[[0,.35],[.35,.5],[.5,.65],[.65,.8],[.8,1]];
+  const rows=bins.map(([lo,hi])=>{
+    const g=done.filter(p=>p.p>=lo&&p.p<hi);
+    if(!g.length) return null;
+    const pred=g.reduce((s,p)=>s+p.p,0)/g.length;
+    const act=g.filter(p=>p.result==='W').length/g.length;
+    return {lo,hi,n:g.length,pred,act};
+  }).filter(Boolean);
+  const ece=rows.reduce((s,r)=>s+r.n/n*Math.abs(r.pred-r.act),0);
+  const predSum=done.reduce((s,p)=>s+p.p,0), actSum=done.filter(p=>p.result==='W').length;
+
+  el.innerHTML =
+    '<div class="kv"><span>정산된 픽</span><b>'+n+'개</b></div>'+
+    '<div class="kv"><span>앱이 예상한 적중 수</span><b>'+predSum.toFixed(1)+'</b></div>'+
+    '<div class="kv"><span>실제 적중 수</span><b>'+actSum+'</b></div>'+
+    '<div class="kv"><span>보정 오차 (ECE)</span><b>'+ece.toFixed(3)+'</b></div>'+
+    '<div class="scroll" style="margin-top:10px"><table><thead><tr>'+
+      '<th>예측 확률대</th><th>예측</th><th>실제</th><th>n</th></tr></thead><tbody>'+
+      rows.map(r=>'<tr><td>'+(r.lo*100)+'–'+(r.hi*100)+'%</td><td>'+pct(r.pred)+
+        '</td><td class="'+(Math.abs(r.pred-r.act)<.1?'pos':'')+'">'+pct(r.act)+
+        '</td><td>'+r.n+'</td></tr>').join('')+'</tbody></table></div>'+
+    '<p class="note" style="margin:10px 0 0">'+
+      (n<30 ? '<b>아직 '+n+'개다.</b> 위 숫자는 참고만 해라 — 30개는 넘어야 방향이라도 보인다.'
+            : '예측과 실제가 각 줄에서 비슷하면 확률 추정이 건강한 것이다. '+
+              '한쪽으로 계속 치우치면 알려줘라 — 보정항을 넣을 수 있다.')+'</p>';
+}
+
+/* ═══════════════ 방법론 · 검증 ═══════════════ */
+function reliabilitySVG(){
+  const C=DATA.backtest.calib, X0=46,X1=300,Y0=22,Y1=252;
+  const sx=p=>X0+p*(X1-X0), sy=p=>Y1-p*(Y1-Y0);
+  const ticks=[0,.25,.5,.75,1];
+  let g='';
+  ticks.forEach(t=>{ g+='<line x1="'+sx(t)+'" y1="'+Y0+'" x2="'+sx(t)+'" y2="'+Y1+'" stroke="var(--line2)" stroke-width="1"/>'
+    +'<line x1="'+X0+'" y1="'+sy(t)+'" x2="'+X1+'" y2="'+sy(t)+'" stroke="var(--line2)" stroke-width="1"/>'
+    +'<text x="'+sx(t)+'" y="'+(Y1+16)+'" fill="var(--faint)" font-size="10" font-family="var(--mono)" text-anchor="middle">'+(t*100)+'</text>'
+    +'<text x="'+(X0-8)+'" y="'+(sy(t)+3.5)+'" fill="var(--faint)" font-size="10" font-family="var(--mono)" text-anchor="end">'+(t*100)+'</text>'; });
+  g+='<line x1="'+sx(0)+'" y1="'+sy(0)+'" x2="'+sx(1)+'" y2="'+sy(1)+'" stroke="var(--muted)" stroke-width="2" stroke-dasharray="4 4"/>';
+  const pts=C.map(c=>[sx(c.p),sy(c.a)]);
+  g+='<polyline points="'+pts.map(p=>p.join(',')).join(' ')+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>';
+  C.forEach((c,i)=>{ const r=Math.max(4,Math.min(9,Math.sqrt(c.n)/9));
+    g+='<circle cx="'+pts[i][0]+'" cy="'+pts[i][1]+'" r="'+r+'" fill="var(--accent)" stroke="var(--surface)" stroke-width="2">'
+      +'<title>예측 '+(c.p*100).toFixed(1)+'% → 실제 '+(c.a*100).toFixed(1)+'% (n='+c.n.toLocaleString()+')</title></circle>'; });
+  return '<svg viewBox="0 0 320 292" width="100%" style="max-width:340px" role="img" aria-label="신뢰도 다이어그램: 모델 예측 확률 대비 실제 발생 빈도">'
+    +g+'<text x="'+((X0+X1)/2)+'" y="286" fill="var(--faint)" font-size="10" font-family="var(--mono)" text-anchor="middle">예측 확률 (%)</text></svg>';
+}
+function roiSVG(){
+  const D=DATA.backtest.betmanSim, X0=58,X1=306,Y0=16;
+  const lo=-6, hi=52, sx=v=>X0+(v-lo)/(hi-lo)*(X1-X0);
+  const H=34; let g='';
+  [0,10,20,30,40,50].forEach(t=>{ g+='<line x1="'+sx(t)+'" y1="'+Y0+'" x2="'+sx(t)+'" y2="'+(Y0+D.length*H)+'" stroke="var(--line2)" stroke-width="1"/>'
+    +'<text x="'+sx(t)+'" y="'+(Y0+D.length*H+15)+'" fill="var(--faint)" font-size="10" font-family="var(--mono)" text-anchor="middle">'+t+'</text>'; });
+  g+='<line x1="'+sx(0)+'" y1="'+Y0+'" x2="'+sx(0)+'" y2="'+(Y0+D.length*H)+'" stroke="var(--muted)" stroke-width="2"/>';
+  D.forEach((d,i)=>{ const y=Y0+i*H+H/2;
+    g+='<text x="'+(X0-10)+'" y="'+(y+3.5)+'" fill="var(--muted)" font-size="10.5" font-family="var(--mono)" text-anchor="end">EV ≥ +'+d.th+'%</text>'
+     +'<line x1="'+sx(d.lo)+'" y1="'+y+'" x2="'+sx(d.hi)+'" y2="'+y+'" stroke="var(--line)" stroke-width="7" stroke-linecap="round"/>'
+     +'<rect x="'+Math.min(sx(0),sx(d.roi))+'" y="'+(y-6)+'" width="'+Math.abs(sx(d.roi)-sx(0))+'" height="12" rx="4" fill="var(--good)"/>'
+     +'<circle cx="'+sx(d.roi)+'" cy="'+y+'" r="5" fill="var(--good)" stroke="var(--surface)" stroke-width="2">'
+     +'<title>EV ≥ +'+d.th+'% : ROI '+d.roi.toFixed(2)+'% · 95% CI ['+d.lo+'%, '+d.hi+'%] · n='+d.n+'</title></circle>'
+     +'<text x="'+(sx(d.hi)+8)+'" y="'+(y+3.5)+'" fill="var(--ink2)" font-size="10.5" font-family="var(--mono)">n='+d.n+'</text>'; });
+  return '<svg viewBox="0 0 380 '+(Y0+D.length*H+26)+'" width="100%" role="img" aria-label="EV 기준별 실현 ROI와 95% 신뢰구간">'+g
+    +'<text x="'+((X0+X1)/2)+'" y="'+(Y0+D.length*H+24)+'" fill="var(--faint)" font-size="10" font-family="var(--mono)" text-anchor="middle">ROI (%)</text></svg>';
+}
+function renderMethod(){
+  const B=DATA.backtest, DC_=DATA.uncertainty.derivedCheck;
+  const tbl=(head,rows)=>'<div class="scroll"><table><thead><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+
+    '</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
+  $('#methodOut').innerHTML =
+  '<div class="cols"><div style="display:flex;flex-direction:column;gap:14px">'+
+
+  '<div class="card"><h2>이 앱이 실제로 검증한 것 <span class="lbl">walk-forward · 재현 가능</span></h2><div class="pad">'+
+   '<p class="note" style="margin:0 0 12px">football-data.co.uk의 5대 리그 실경기 <b>10,880경기</b>로 Dixon-Coles를 학습하고, '+
+   '2023/24–2025/26 <b>'+B.n.toLocaleString()+'경기</b>를 한 번도 미리 보지 않은 상태로 예측했다(7일마다 재학습). '+
+   '아래 숫자는 전부 그 표본 외 결과다.</p>'+
+   '<div class="tiles">'+
+     '<div class="tile"><div class="lbl">검증 경기</div><div class="v">'+B.n.toLocaleString()+'</div></div>'+
+     '<div class="tile"><div class="lbl">모델 RPS</div><div class="v">'+B.sources[0].rps.toFixed(4)+'</div></div>'+
+     '<div class="tile"><div class="lbl">시장 RPS</div><div class="v">'+B.sources[2].rps.toFixed(4)+'</div></div>'+
+     '<div class="tile"><div class="lbl">최적 w_mkt</div><div class="v">'+B.wMkt.toFixed(2)+'</div></div>'+
+   '</div></div></div>'+
+
+  '<div class="card"><h2>가장 중요한 결과 — 모델은 시장을 못 이긴다</h2><div class="pad">'+
+   tbl(['확률 소스','RPS','Log loss','ECE'], B.sources.map(s=>
+     '<tr class="'+(s.m==='시장 클로징'?'hl':'')+'"><td>'+s.m+'</td><td>'+s.rps.toFixed(5)+'</td><td>'+
+     s.ll.toFixed(5)+'</td><td>'+s.ece.toFixed(4)+'</td></tr>'))+
+   '<p class="note" style="margin:12px 0 0">RPS·Log loss는 <b>낮을수록</b> 정확하다. 자체 Dixon-Coles 모델은 '+
+   '시장 배당보다 일관되게 나빴고, 로그-선형 풀링으로 섞었을 때 최적 가중치는 <b>w_mkt = 1.00</b>이었다 — '+
+   '즉 <b>해외 배당이 있으면 모델을 섞지 않는 편이 낫다</b>. 시즌 초반만 따로 봐도 결론은 같았다.</p>'+
+   '<p class="note" style="margin:8px 0 0">그래서 이 앱은 모델을 예측의 주력으로 쓰지 않는다. 모델의 역할은 두 가지다: '+
+   '(1) 해외 배당이 없는 경기의 임시 확률, (2) 최종 확률을 <b>스코어 확률행렬로 되맞춰</b> 핸디캡·언오버·SUM을 '+
+   '승무패와 모순 없이 파생시키는 것.</p>'+
+   '</div></div>'+
+
+  '<div class="card"><h2>모델 캘리브레이션 <span class="lbl">신뢰도 다이어그램</span></h2><div class="pad">'+
+   '<div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start" class="calibwrap">'+
+   reliabilitySVG()+
+   tbl(['예측','실제','n'], B.calib.map(c=>'<tr><td>'+(c.p*100).toFixed(1)+'%</td><td>'+
+     (c.a*100).toFixed(1)+'%</td><td>'+c.n.toLocaleString()+'</td></tr>'))+
+   '</div>'+
+   '<p class="note" style="margin:12px 0 0">점선이 완벽한 보정이다. 모델은 전 구간에서 대각선에 붙어 있고 ECE는 '+
+   B.sources[0].ece.toFixed(4)+' — <b>확률 자체는 믿을 만하다</b>. 다만 60% 이상 구간에서 살짝 과소평가한다(예측 64.4% → 실제 68.5%).</p>'+
+   '</div></div>'+
+
+  '</div><div style="display:flex;flex-direction:column;gap:14px">'+
+
+  '<div class="card"><h2>베트맨形 배당 시뮬레이션 <span class="lbl">이 앱의 핵심 근거</span></h2><div class="pad">'+
+   '<p class="note" style="margin:0 0 12px">기획서 부록 A(1.30/4.20/7.00)에서 베트맨의 가격 구조를 역산해 '+
+   '<b>implied = e<sup>−0.046</sup> · p<sup>0.774</sup></b> 형태로 합성했다(마진 ~21%, 역배에 더 무겁게). '+
+   '거기에 클로징 컨센서스를 p_true로 넣고 EV 기준별로 실제 베팅했다면 어땠는지 계산한 결과다.</p>'+
+   roiSVG()+
+   tbl(['EV 기준','픽 수','경기당','평균배당','적중률 추정','ROI'], B.betmanSim.map(d=>
+     '<tr><td>+'+d.th+'% 이상</td><td>'+d.n+'</td><td>'+d.per.toFixed(2)+'</td><td>'+d.odds.toFixed(2)+
+     '</td><td>'+(d.th===0?'73.7%':d.th===2?'75.4%':'79.7%')+'</td><td class="pos">'+d.roi.toFixed(2)+'%</td></tr>'))+
+   '<p class="note" style="margin:12px 0 0"><b>세 가지를 기억해라.</b><br>'+
+   '① 가치 픽은 <b>10경기에 1개</b>꼴로만 나온다. 회차마다 있을 거라 기대하지 마라.<br>'+
+   '② 나온 픽은 거의 전부 <b>평균 배당 1.5~1.6의 저배당 정배</b>였다.<br>'+
+   '③ EV +5% 이상에서만 신뢰구간이 0을 넘었다(ROI +28.4%, 95% CI +9.9~+48.6%, n=64). '+
+   'EV가 겨우 양수인 픽은 표본이 커도 이익이 확실하지 않다.</p>'+
+   '</div></div>'+
+
+  '<div class="card"><h2>대조군 — 하면 안 되는 것</h2><div class="pad">'+
+   tbl(['전략','픽 수','ROI'],[
+     '<tr><td>모델 확률로 EV&gt;0 픽 베팅</td><td>'+B.modelOnly[0].n.toLocaleString()+'</td><td style="color:var(--bad)">'+B.modelOnly[0].roi.toFixed(2)+'%</td></tr>',
+     '<tr><td>모델 확률로 EV&gt;5% 픽 베팅</td><td>'+B.modelOnly[1].n.toLocaleString()+'</td><td style="color:var(--bad)">'+B.modelOnly[1].roi.toFixed(2)+'%</td></tr>',
+     '<tr><td>컨센서스로 EV&gt;0 (샤프북 상대)</td><td>'+B.stale[0].n.toLocaleString()+'</td><td>'+B.stale[0].roi.toFixed(2)+'%</td></tr>',
+     '<tr><td>컨센서스로 EV&gt;10% (샤프북 상대)</td><td>'+B.stale[3].n.toLocaleString()+'</td><td class="pos">'+B.stale[3].roi.toFixed(2)+'%</td></tr>'])+
+   '<p class="note" style="margin:12px 0 0">모델 확률을 p_true로 써서 베팅하면 <b>−12~−15%</b>다. '+
+   '앱이 "모델 단독" 배지를 띄우면 그 픽은 참고만 해라.</p>'+
+   '</div></div>'+
+
+  '<div class="card"><h2>파생 마켓 검증 <span class="lbl">승무패 → 핸디·언오버·SUM</span></h2><div class="pad">'+
+   '<p class="note" style="margin:0 0 12px">베트맨은 한 경기를 마켓별로 쪼개 내지만, 해외 배당은 보통 <b>승무패에만</b> 붙는다. '+
+   '이 앱은 경기마다 <b>스코어 확률행렬 하나</b>를 만들어 나머지 마켓을 거기서 파생시킨다. '+
+   '그게 믿을 만한지 실경기 '+DC_.n.toLocaleString()+'경기로 검증했다.</p>'+
+   tbl(['파생 마켓','검증 결과','판정'],[
+     '<tr><td>핸디캡 −1.0</td><td>예측 평균 '+DC_.handi.pred.map(v=>(v*100).toFixed(1)+'%').join(' / ')+
+       '<br>실제 빈도 '+DC_.handi.act.map(v=>(v*100).toFixed(1)+'%').join(' / ')+
+       '</td><td class="pos">ECE '+DC_.handi.ece.toFixed(4)+'</td></tr>',
+     '<tr><td>언더오버 2.5</td><td>Log loss '+DC_.ou.ll.toFixed(5)+
+       '<br>실제 O/U 시장 '+DC_.ou.llMarket.toFixed(5)+'</td><td class="pos">사실상 동일</td></tr>',
+     '<tr><td>SUM 홀짝</td><td>예측 홀 '+(DC_.sum.pred*100).toFixed(1)+
+       '%<br>실제 '+(DC_.sum.act*100).toFixed(1)+'%</td><td class="pos">ECE '+
+       DC_.sum.ece.toFixed(4)+'</td></tr>'])+
+   '<p class="note" style="margin:12px 0 0"><b>핸디캡은 거의 오차가 없다</b> — 승무패가 골득실차 분포를 직접 제약하기 때문이다. '+
+   '<b>총득점은 더 흔들린다</b>: 파생 오버2.5는 실제 O/U 시장과 로짓 기준 표준편차 '+DC_.ou.sd.toFixed(2)+
+   '만큼 벌어지고, 평균적으로 오버를 0.087 로짓만큼 낮게 본다. 그래서 앱은 파생 언더오버에 '+
+   '<b>그 편향을 보정하고 불확실성을 더 크게</b> 잡는다. 목록에서 <span class="badge b-info">파생</span> 배지가 그 표시다.</p>'+
+   '</div></div>'+
+
+  '<div class="card"><h2>마진 제거 방식 <span class="lbl">§6.2.1</span></h2><div class="pad">'+
+   tbl(['방식','RPS','Log loss','ECE'], B.devig.map(d=>
+     '<tr class="'+(d.m==='파워법'?'hl':'')+'"><td>'+d.m+'</td><td>'+d.rps.toFixed(5)+'</td><td>'+
+     d.ll.toFixed(5)+'</td><td>'+d.ece.toFixed(4)+'</td></tr>'))+
+   '<p class="note" style="margin:12px 0 0">셋 다 비슷하지만 <b>파워법</b>이 RPS·Log loss·ECE 모두에서 가장 좋아 기본값으로 뒀다. '+
+   '역배에 마진이 더 얹히는 편향을 반영하기 때문이다.</p></div></div>'+
+
+  '<div class="card"><h2>모델 사양 · 한계</h2><div class="pad">'+
+   '<div class="kv"><span>학습 데이터</span><b>10,880경기 / 5대 리그 / 2020–2026</b></div>'+
+   '<div class="kv"><span>추정</span><b>시간가중 최우도 (ξ=0.0018/일)</b></div>'+
+   '<div class="kv"><span>반감기</span><b>약 385일</b></div>'+
+   '<div class="kv"><span>정규화</span><b>릿지 κ=6 · 승격팀 별도 사전분포</b></div>'+
+   '<div class="kv"><span>학습 창</span><b>최근 1,100일</b></div>'+
+   '<div class="kv"><span>레이팅 기준일</span><b>'+DATA.asof+'</b></div>'+
+   '<p class="note" style="margin:12px 0 0"><b>아직 없는 것</b> — 부상·라인업(§6.3.2), 전술 스타일 벡터(§6.3.3), '+
+   '압박 체인 모형(§6.3.5). 이건 유료 이벤트 데이터가 있어야 하고, 백테스트 결과를 보면 '+
+   '<b>그걸 넣어도 시장을 이길 가능성은 낮다</b>. 우선순위는 해외 배당을 꾸준히 모으는 쪽이다.</p>'+
+   '<p class="note" style="margin:8px 0 0">기대득점 보정 입력창으로 결장 영향을 수동 반영할 수 있다. 레이팅은 '+DATA.asof+' 기준 고정값이라, 시즌이 진행되면 새로 학습해 갱신해야 한다.</p>'+
+   '</div></div>'+
+
+  '</div></div>';
+}
+
+/* ═══════════════ 초기화 ═══════════════ */
+function go(tab){
+  $$('nav button').forEach(b=> b.setAttribute('aria-current', String(b.dataset.tab===tab)));
+  $$('.panel').forEach(p=> p.classList.toggle('on', p.id==='p-'+tab));
+  if(tab==='combo') runCombo();
+  if(tab==='log') renderLog();
+  window.scrollTo({top:0,behavior:'instant'});
+}
+$$('nav button').forEach(b=> b.onclick=()=>go(b.dataset.tab));
+
+$('#fLeague').innerHTML = '<button class="btn sm" data-lg="ALL" aria-pressed="true">전체</button>'+
+  Object.entries(DATA.leagues).map(([k,v])=>'<button class="btn sm" data-lg="'+k+'">'+v.name+'</button>').join('');
+$('#fLeague').onclick = e=>{ const b=e.target.closest('[data-lg]'); if(!b) return;
+  ST.lg=b.dataset.lg; $$('#fLeague .btn').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); render(); };
+$('#onlyValue').onclick = e=>{ ST.onlyValue=!ST.onlyValue;
+  e.currentTarget.setAttribute('aria-pressed',String(ST.onlyValue)); render(); };
+$('#helpToggle').onclick = e=>{ ST.help=!ST.help;
+  e.currentTarget.setAttribute('aria-pressed',String(ST.help)); renderHelp(); };
+function renderHelp(){
+  const b=$('#helpBox'); b.hidden=!ST.help; if(!ST.help) return;
+  b.innerHTML = '<div class="pad" style="border-bottom:1px solid var(--line2);background:var(--surface2)">'+
+   '<div class="grid g2" style="gap:14px">'+
+   '<div><div class="lbl" style="margin-bottom:5px">EV (기대값)</div>'+
+    '<p class="note" style="margin:0"><code class="num">EV = 적정확률 × 배당 − 1</code><br>'+
+    '이 픽에 1,000원씩 계속 걸었을 때 <b>판당 평균 몇 %가 남는지</b>다. '+
+    'EV +1.6%면 1,000원당 평균 16원 이익, EV −40%면 판당 400원씩 태우는 중이라는 뜻이다.</p></div>'+
+   '<div><div class="lbl" style="margin-bottom:5px">EV 80% 하한</div>'+
+    '<p class="note" style="margin:0">확률 추정에는 오차가 있다. 그 오차를 감안했을 때의 <b>비관적 EV</b>다. '+
+    '하한까지 양수여야 추정이 조금 틀려도 이익이 유지된다.</p></div></div>'+
+   '<hr><div class="grid g3" style="gap:10px">'+
+   '<div><span class="badge b-rec">🟢 추천</span><p class="note" style="margin:6px 0 0">EV 하한까지 양수. 실제로 걸어볼 후보.</p></div>'+
+   '<div><span class="badge b-watch">🟡 관심</span><p class="note" style="margin:6px 0 0">EV는 양수지만 하한은 음수. <b>초록불이 아니다.</b> 추정이 조금만 틀려도 뒤집힌다.</p></div>'+
+   '<div><span class="badge b-info">⚪ 참고</span><p class="note" style="margin:6px 0 0">EV 음수. 걸면 장기적으로 손해다.</p></div>'+
+   '</div><hr>'+
+   '<p class="note" style="margin:0"><b>실제로 걸 기준</b> — 백테스트(16,514픽)에서 신뢰구간이 0을 넘은 건 '+
+   '<b>EV +5% 이상</b>뿐이었다(ROI +28.4%, 95% CI +9.9~+48.6%). EV가 겨우 양수인 픽은 통계적으로 이익이라 말할 수 없다. '+
+   '그런 픽은 10경기당 1개도 안 나오니, 회차마다 뭔가 걸어야 한다는 생각을 버려라.</p>'+
+   '<p class="note" style="margin:8px 0 0"><span class="badge b-flag">⚡ 지연 배당</span> '+
+   '해외 시장 확률이 4%p 이상 움직였는데 베트맨 배당은 그대로인 상태다. 기획서가 지목한 실제 엣지 원천이다. '+
+   '<span class="badge b-bad">모델 단독</span> 해외 배당 없이 자체 모델로만 계산했다는 뜻 — 백테스트 ROI −12%였으니 참고만 해라.</p>'+
+   '</div>';
+}
+
+$('#iLeague').innerHTML = Object.entries(DATA.leagues).map(([k,v])=>'<option value="'+k+'">'+v.name+'</option>').join('');
+$('#iLeague').onchange = fillTeams;
+$('#iMarket').onchange = fillOddsInputs;
+fillTeams(); fillOddsInputs();
+
+$('#wMkt').oninput = e=>{ ST.wMkt=+e.target.value; $('#wMktV').textContent=ST.wMkt.toFixed(2); save(); render(); };
+$('#devig').onchange = e=>{ ST.devig=e.target.value; save(); render(); };
+
+/* 저장된 작업 회차 복원 */
+try{ const s=JSON.parse(localStorage.getItem('ts_v1')||'null');
+  if(s&&s.m){ ST.matches=s.m; ST.round=s.r||''; ST.devig=s.d||'power';
+    ST.wMkt = typeof s.w==='number'?s.w:1; ST.zeroEven = s.z!==false;
+    ST.snap = s.s||{}; ST.snapAt = s.sa||'';
+    $('#devig').value=ST.devig; $('#wMkt').value=ST.wMkt; $('#wMktV').textContent=ST.wMkt.toFixed(2); } }catch(e){}
+if(!ST.matches.length){ DEMO.forEach(d=>addMatch(JSON.parse(JSON.stringify({...d,adj:{},kick:''})))); ST.round='예시 회차'; }
+
+if(ST.matches.length && !ST.sel) ST.sel = ST.matches[0].id;
+renderMethod(); renderHelp(); render(); renderLog();
+
+/* ── 수집기가 db에 올려둔 회차 자동 수신 ── */
+function showDbBanner(doc){
+  const b=$('#dbBanner');
+  if(!doc || !doc.matches || !doc.matches.length){ b.hidden=true; return; }
+  const usable = doc.matches.filter(m=> m.betman && m.betman.every(x=>+x>1)).length;
+  const mine = ST.round||'';
+  const label = (doc.round? doc.round+'회차':'회차') +
+    (doc.capturedAt? ' · '+String(doc.capturedAt).slice(5,16).replace('T',' ') : '');
+  if(mine === label){ b.hidden=true; return; }
+  b.hidden=false;
+  const ready = usable>0;
+  b.innerHTML = '<div class="pad" style="border-bottom:1px solid var(--line2);background:var(--accent-soft);'+
+    'display:flex;gap:12px;align-items:center;flex-wrap:wrap">'+
+    '<span class="badge b-flag">수집기</span>'+
+    '<span class="note" style="margin:0"><b>'+label+'</b> — '+
+      (ready ? '배당이 붙은 '+usable+'행이 올라와 있다.'
+             : doc.matches.length+'경기가 편성됐지만 <b>아직 배당 공시 전</b>이다. 발매 시작 후 다시 수집하면 배당이 채워진다.')+
+    '</span>'+
+    (ready?'<button class="btn pri sm" id="dbLoad" style="margin-left:auto">불러오기</button>':'')+
+    '<button class="btn sm" id="dbSkip"'+(ready?'':' style="margin-left:auto"')+'>닫기</button></div>';
+  if(!ready){ $('#dbSkip').onclick=()=>{ b.hidden=true; }; return; }
+  $('#dbLoad').onclick=()=>{
+    const r=importCollectorJSON(JSON.stringify(doc));
+    if(r){ render(); toast(r.n+'행 불러왔다'); go('round'); }
+  };
+  $('#dbSkip').onclick=()=>{ b.hidden=true; };
+}
+async function pullRound(db){
+  try{
+    const snap = await db.doc('rounds/current').get();
+    if(snap && snap.exists){
+      const d = snap.data();
+      ST.dbRound = d;
+      showDbBanner(d);
+      $('#mSrc').textContent = '수집기 연결';
+    }
+  }catch(e){}
+}
+
+/* ── 시작: 저장소 연결 + 회차 데이터 자동 로딩 ── */
+(async()=>{
+  // ① Supabase (GitHub Pages 배포)
+  if(sbReady()){
+    try{ await sbFetch('picks?select=id&limit=1'); SB=true;
+         $('#dbState').textContent='공유 저장 (Supabase)';
+    }catch(e){ console.warn('Supabase 연결 실패 — 이 브라우저에만 저장한다.', e.message); }
+  }
+  // ② Claude Artifact db
+  if(!SB){
+    try{
+      const db = await claude.use('db');
+      if(db){ DB=db; $('#dbState').textContent='공유 저장 (Artifact)';
+        db.doc('rounds/current').onSnapshot(
+          snap=>{ if(snap && snap.exists){ ST.dbRound=snap.data(); showDbBanner(ST.dbRound); } },
+          ()=>{});
+        await pullRound(db);
+      }
+    }catch(e){}
+  }
+  if(!SB && !DB) $('#dbState').textContent='이 브라우저에만 저장';
+  await loadPicks(); renderLog();
+
+  // ③ 같은 폴더의 data/latest.json — 수집기가 올려둔 이번 회차
+  try{
+    const r = await fetch('data/latest.json?t='+Date.now(), {cache:'no-store'});
+    if(r.ok){
+      const doc = await r.json();
+      ST.dbRound = doc;
+      $('#mSrc').textContent = '자동';
+      const label = (doc.round? doc.round+'회차':'회차') +
+        (doc.capturedAt? ' · '+String(doc.capturedAt).slice(5,16).replace('T',' ') : '');
+      const usable = (doc.matches||[]).filter(m=>m.betman && m.betman.every(x=>+x>1));
+      // 이미 그 회차를 보고 있지 않고, 쓸 수 있는 배당이 있으면 바로 띄운다
+      if(usable.length && ST.round !== label){
+        importCollectorJSON(JSON.stringify(doc)); render();
+        toast(label+' 자동으로 불러왔다 ('+usable.length+'행)');
+      } else {
+        showDbBanner(doc);
+      }
+    }
+  }catch(e){ /* Artifact 로 열었거나 파일이 없으면 조용히 넘어간다 */ }
+})();
+</script>
+<style>
+@media(max-width:760px){ .calibwrap{grid-template-columns:1fr!important} }
+</style>
