@@ -11,10 +11,20 @@ printf '취소하려면 Control+C.\n\n'
 
 printf '\033[1m1) Project URL\033[0m (https://...supabase.co)\n> '
 read -r SB_URL
-SB_URL="${SB_URL%/}"
+# 앞뒤 공백 제거
+SB_URL="$(printf '%s' "$SB_URL" | tr -d '[:space:]')"
+# Data API 페이지는 .../rest/v1/ 까지 붙여서 보여준다 → 뒷부분을 잘라낸다
+SB_URL="$(printf '%s' "$SB_URL" | sed -E 's#(https://[A-Za-z0-9-]+\.supabase\.co).*#\1#')"
+# 대시보드 주소를 붙여넣은 경우도 살려준다
 case "$SB_URL" in
-  https://*.supabase.co) ;;
-  *) printf '\n\033[31m주소 형식이 이상하다.\033[0m https://무언가.supabase.co 여야 한다.\n'; exit 1;;
+  *supabase.com/dashboard/project/*)
+    REF="$(printf '%s' "$SB_URL" | sed -E 's#.*/project/([A-Za-z0-9]+).*#\1#')"
+    SB_URL="https://$REF.supabase.co" ;;
+esac
+case "$SB_URL" in
+  https://*.supabase.co) printf '   → %s\n' "$SB_URL" ;;
+  *) printf '\n\033[31m주소를 알아보지 못했다.\033[0m 받은 값: %s\n' "$SB_URL"
+     printf '  https://무언가.supabase.co 형태여야 한다.\n'; exit 1;;
 esac
 
 printf '\n\033[1m2) anon 키\033[0m (Legacy 탭 · 웹페이지에 들어간다)\n> '
