@@ -200,7 +200,9 @@ details summary:hover{color:var(--accent-ink)}
 .tile .v{font-family:var(--mono);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2}
 .tile .v.pos{color:var(--good)}.tile .v.neg{color:var(--bad)}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);
-  color:var(--bg);padding:9px 16px;border-radius:4px;font-size:12.5px;z-index:100;box-shadow:var(--shadow)}
+  color:var(--bg);padding:9px 16px;border-radius:4px;font-size:12.5px;z-index:100;box-shadow:var(--shadow);
+  display:flex;align-items:center;gap:4px;max-width:calc(100vw - 32px)}
+.toast .btn{padding:3px 10px;font-size:11.5px;cursor:pointer;border-radius:3px;border:1px solid}
 /* 로그인 게이트 */
 #gate{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;
   align-items:center;justify-content:center;padding:22px;overflow:auto}
@@ -288,6 +290,7 @@ details summary:hover{color:var(--accent-ink)}
           <span class="chips" id="fLeague"></span>
           <button class="btn sm" id="onlyValue" aria-pressed="false">가치 픽만</button>
           <button class="btn sm" id="helpToggle" aria-pressed="false">용어 설명</button>
+          <button class="btn sm" id="reloadRound" title="수집기가 올려둔 회차를 다시 받아온다">회차 새로 받기</button>
         </h2>
         <div id="dbBanner" hidden></div>
         <div id="helpBox" hidden></div>
@@ -803,8 +806,20 @@ const GR = {REC:['b-rec','🟢','추천'],WATCH:['b-watch','🟡','관심'],
             INFO:['b-info','⚪','참고'],NODATA:['b-info','·','데이터 없음'],
             NOREF:['b-bad','⚠','해외 배당 필요']};
 let toastT;
-function toast(msg){ let t=$('#toast'); if(!t){t=document.createElement('div');t.id='toast';t.className='toast';document.body.appendChild(t);}
-  t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,2600); }
+function toast(msg, action){
+  let t=$('#toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.className='toast';document.body.appendChild(t);}
+  t.innerHTML='<span>'+msg+'</span>';
+  if(action){
+    const b=document.createElement('button');
+    b.className='btn sm'; b.textContent=action.label;
+    b.style.cssText='margin-left:12px;background:transparent;border-color:currentColor;color:inherit';
+    b.onclick=()=>{ t.hidden=true; clearTimeout(toastT); action.run(); };
+    t.appendChild(b);
+  }
+  t.hidden=false; clearTimeout(toastT);
+  toastT=setTimeout(()=>t.hidden=true, action?7000:2600);
+}
 const save = ()=>{ try{ localStorage.setItem('ts_v1', JSON.stringify(
   {m:ST.matches, r:ST.round, d:ST.devig, w:ST.wMkt, z:ST.zeroEven,
    s:ST.snap, sa:ST.snapAt})); }catch(e){} };
@@ -1125,7 +1140,16 @@ function renderDetail(){
     m.ref=v; save(); render(); toast('해외 배당을 반영했다');
   };
   if($('#clearRef')) $('#clearRef').onclick=()=>{ m.ref=null; save(); render(); };
-  $('#delMatch').onclick=()=>{ ST.matches=ST.matches.filter(x=>x.id!==m.id); ST.sel=null; save(); render(); };
+  $('#delMatch').onclick=()=>{
+    const idx=ST.matches.findIndex(x=>x.id===m.id);
+    const backup=JSON.parse(JSON.stringify(m));   // 되돌릴 수 있게 통째로 보관
+    ST.matches=ST.matches.filter(x=>x.id!==m.id); ST.sel=null; save(); render();
+    toast(MKLABEL(m)+' 항목을 지웠다', {label:'되돌리기', run:()=>{
+      ST.matches.splice(Math.min(idx, ST.matches.length), 0, backup);
+      ST.matches.sort((a,b)=>(a.no||0)-(b.no||0));
+      ST.sel=backup.id; save(); render(); toast('되돌렸다');
+    }});
+  };
   $('#savePick').onclick=()=>savePick(m,r);
   $('#copyPick').onclick=()=>{
     const t=String(m.no).padStart(3,'0')+' '+MARKETS[m.market].full[(r.best||{i:0}).i];
@@ -1221,7 +1245,12 @@ $('#addMatch').onclick = ()=>{
   toast('추가했다'); render(); go('round');
 };
 $('#clearAll').onclick = ()=>{ if(!ST.matches.length) return;
-  ST.matches=[]; ST.sel=null; save(); render(); toast('비웠다'); };
+  const backup=JSON.parse(JSON.stringify(ST.matches)), rb=ST.round;
+  ST.matches=[]; ST.sel=null; save(); render();
+  toast(backup.length+'행을 비웠다', {label:'되돌리기', run:()=>{
+    ST.matches=backup; ST.round=rb; ST.sel=backup[0]&&backup[0].id; save(); render(); toast('되돌렸다');
+  }});
+};
 
 const DEMO = [
  // 아스널 vs 에버턴 — 승무패·언오버에만 해외 배당이 있고, 핸디·SUM은 거기서 파생된다
@@ -2052,6 +2081,27 @@ $('#fLeague').onclick = e=>{ const b=e.target.closest('[data-lg]'); if(!b) retur
   ST.lg=b.dataset.lg; $$('#fLeague .btn').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); render(); };
 $('#onlyValue').onclick = e=>{ ST.onlyValue=!ST.onlyValue;
   e.currentTarget.setAttribute('aria-pressed',String(ST.onlyValue)); render(); };
+$('#reloadRound').onclick = async ()=>{
+  const btn=$('#reloadRound'); btn.disabled=true; btn.textContent='받는 중…';
+  let doc=null;
+  try{
+    if(SB){ const rows=await sbFetch('rounds?select=*&id=eq.current');
+      const row=rows&&rows[0];
+      if(row&&row.payload) doc={...row.payload, round:row.round_no, gmTs:row.gm_ts,
+                                capturedAt:row.captured_at, saleEnd:row.sale_end}; }
+    else if(DB){ const sn=await DB.doc('rounds/current').get(); if(sn&&sn.exists) doc=sn.data(); }
+    if(!doc){ const r=await fetch('data/latest.json?t='+Date.now(),{cache:'no-store'});
+              if(r.ok) doc=await r.json(); }
+  }catch(e){}
+  btn.disabled=false; btn.textContent='회차 새로 받기';
+  if(!doc || !(doc.matches||[]).length) return toast('받아올 회차가 없다. 수집기를 먼저 돌려라.');
+  const before=ST.matches.length;
+  const r=importCollectorJSON(JSON.stringify(doc));
+  if(!r) return toast('회차 데이터를 읽지 못했다');
+  render();
+  toast('회차를 새로 받았다 — '+r.n+'행'+(before?' (이전 '+before+'행 대체)':'')+
+        (r.withRef? ', 해외 배당 '+r.withRef+'행':''));
+};
 $('#helpToggle').onclick = e=>{ ST.help=!ST.help;
   e.currentTarget.setAttribute('aria-pressed',String(ST.help)); renderHelp(); };
 function renderHelp(){
