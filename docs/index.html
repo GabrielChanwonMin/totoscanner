@@ -1505,7 +1505,11 @@ function initGate(){
         await sbAuth('signup', {email, password:pw, data:{name}});
         try{ const s = await sbAuth('token?grant_type=password', {email, password:pw});
              saveSession(s); await afterLogin(); }
-        catch(e2){ gateMsg('<b>가입 신청됐다.</b><br>주인이 승인하면 로그인할 수 있다.', 'ok'); }
+        catch(e2){
+          const m2=String(e2.message||'');
+          gateMsg(/confirm/i.test(m2)
+            ? '<b>가입 신청됐다.</b><br>메일함에서 확인 링크를 누른 뒤, 로그인 탭에서 들어와라.'
+            : '<b>가입 신청됐다.</b><br>주인이 승인하면 들어올 수 있다.', 'ok'); }
       } else {
         const s = await sbAuth('token?grant_type=password', {email, password:pw});
         saveSession(s); await afterLogin();
@@ -1516,7 +1520,7 @@ function initGate(){
               ? '서버에 연결하지 못했다.<br>docs/config.js 의 <b>supabaseUrl</b> 이 맞는지, 인터넷이 되는지 확인해라.'
             : /Invalid login/i.test(m) ? '이메일이나 비밀번호가 맞지 않는다.'
             : /already registered|User already/i.test(m) ? '이미 가입된 이메일이다. 로그인 탭으로 가라.'
-            : /Email.*confirm|not confirmed/i.test(m) ? '이메일 확인이 켜져 있다.<br>Supabase › Authentication › Providers › Email 에서 <b>Confirm email</b> 을 꺼라.'
+            : /Email.*confirm|not confirmed/i.test(m) ? '<b>가입은 됐다.</b> 메일함에서 Supabase 가 보낸 확인 메일을 열고 링크를 눌러라.<br>그 뒤 이 화면에서 다시 로그인하면 된다. (스팸함도 확인해봐라)'
             : /Password should be/i.test(m) ? '비밀번호는 6자 이상이어야 한다.'
             : /signups not allowed|Signups not/i.test(m) ? '가입이 막혀 있다.<br>Supabase › Authentication › Sign In / Providers 에서 가입을 허용해라.'
             : m, 'err');
