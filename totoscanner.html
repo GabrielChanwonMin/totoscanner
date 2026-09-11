@@ -410,9 +410,13 @@ details summary:hover{color:var(--accent-ink)}
     <h2>자동 채점 <span class="lbl" id="dbState">로컬 저장</span></h2>
     <div id="autoScore"></div>
   </div>
+  <div class="card" style="margin-bottom:14px">
+    <h2>내 베팅 기록 <span class="lbl">조합 단위 · 전부 맞아야 적중</span></h2>
+    <div id="slipList"></div>
+  </div>
   <div class="cols">
     <div class="card">
-      <h2>직접 저장한 픽 <span class="lbl">선택 사항</span></h2>
+      <h2>직접 저장한 픽 <span class="lbl">낱개 · 선택 사항</span></h2>
       <div id="logList"></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:14px">
@@ -792,7 +796,7 @@ function bandOf(o){
 const ST = { matches:[], sel:null, devig:'power', wMkt:1, zeroEven:true,
              onlyValue:false, lg:'ALL', round:'', picks:[], settleId:null,
              snap:{}, snapAt:'', help:false, open:null, groups:[], scoreboard:null, bk:'all',
-             comboOpen:null, comboLg:new Set() };   // 비어 있으면 전체
+             comboOpen:null, comboLg:new Set(), slips:[], slipOpen:null };   // comboLg 비어 있으면 전체
 /* 스냅샷 키: 항목번호 + 마켓 + 기준선 */
 const snapKey = m => m.no+'|'+m.market+'|'+(m.line==null?'':(+m.line).toFixed(1));
 const $ = s=>document.querySelector(s), $$ = s=>[...document.querySelectorAll(s)];
@@ -1503,8 +1507,15 @@ function runCombo(){
               '<b>'+od(l.odds)+'</b></div>').join('')+
             '<div class="rowf" style="margin-top:9px">'+
               '<button class="btn sm" data-copy="'+key+'">조합 복사</button>'+
-              '<span class="note" style="margin:0">조합은 각 픽의 마진이 곱해져 기대값이 낮아진다.</span>'+
-            '</div></div>' : '')+
+              '<input class="num" data-stake="'+key+'" value="1000" inputmode="numeric" '+
+                'style="width:82px" aria-label="건 금액">'+
+              '<span class="note" style="margin:0">원</span>'+
+              '<button class="btn pri sm" data-slip="'+key+'">이 조합 기록</button>'+
+            '</div>'+
+            '<p class="note" style="margin:8px 0 0">기록하면 <b>성적표 › 내 베팅 기록</b>에 쌓이고, '+
+            '경기가 끝나면 <b>전부 맞았는지</b> 자동으로 채점된다. '+
+            '적중 시 환급 '+Math.round(c.odds*1000).toLocaleString()+'원 (1,000원 기준).</p>'+
+            '</div>' : '')+
           '</div>';
       }).join('')+'</div>';
     out.appendChild(card);
@@ -1513,6 +1524,14 @@ function runCombo(){
       el.onclick=e=>{ if(e.target.closest('[data-copy]')) return;
         ST.comboOpen = ST.comboOpen===el.dataset.ck ? null : el.dataset.ck; runCombo(); };
       el.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); } };
+    });
+    card.querySelectorAll('[data-slip]').forEach(btn=> btn.onclick=e=>{
+      e.stopPropagation();
+      const i=+btn.dataset.slip.replace(name,'');
+      const st=card.querySelector('[data-stake="'+btn.dataset.slip+'"]');
+      const amount=parseInt((st&&st.value)||'1000',10);
+      if(!(amount>=100)) return toast('금액은 100원 이상이어야 한다');
+      saveSlip(slipFromCombo(picks[i], name, amount));
     });
     card.querySelectorAll('[data-copy]').forEach(btn=> btn.onclick=e=>{
       e.stopPropagation();
@@ -1524,6 +1543,64 @@ function runCombo(){
   });
 }
 $('#runCombo').onclick = runCombo;
+
+/* ═══════════ 베팅 전표(조합) — 실제로 건 묶음 ═══════════
+   모델 채점(개별 경기)과 다르다. 조합은 전부 맞아야 적중이다. */
+const LSLIP='ts_slips_v1';
+const lsSlips = ()=>{ try{ return JSON.parse(localStorage.getItem(LSLIP)||'[]'); }catch(e){ return []; } };
+const lsSlipSet = a =>{ try{ localStorage.setItem(LSLIP, JSON.stringify(a)); }catch(e){} };
+
+function slipFromCombo(c, style, stake){
+  return {
+    id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    created_at:new Date().toISOString(),
+    owner_id:(SESSION&&SESSION.user&&SESSION.user.id)||null,
+    owner_name:(ME&&(ME.name||ME.email))||'',
+    round: ST.round||'', style,
+    legs: c.legs.map(l=>{
+      const m=ST.matches.find(x=>x.no===l.no) || {};
+      return {no:l.no, league:m.league||null, home:m.home||null, away:m.away||null,
+              market:m.market||null, line:(m.line==null?null:+m.line),
+              sel:(MARKETS[m.market]||{full:[]}).full.indexOf(l.sel.split('· ').pop()),
+              selName:l.sel, label:l.label, odds:l.odds, p:l.p,
+              kick:m.kick||null};
+    }),
+    odds:+c.odds.toFixed(3), prob:+c.p.toFixed(5),
+    ev:+c.ev.toFixed(5), ev_lo:+c.evLo.toFixed(5),
+    stake:+stake||1000, result:'', settled_at:null, detail:null
+  };
+}
+async function saveSlip(slip){
+  let ok=false;
+  if(SB){ try{ await sbFetch('slips',{method:'POST',body:JSON.stringify(slip)}); ok=true; }
+          catch(e){ console.warn(e);
+            if(/relation .*slips.* does not exist|PGRST205/i.test(e.message||''))
+              return toast('slips 표가 없다. setup/supabase_slips.sql 을 먼저 실행해라'); } }
+  if(!ok) lsSlipSet([slip,...lsSlips()]);
+  await loadSlips(); renderLog();
+  toast(slip.legs.length+'경기 조합을 기록했다 (배당 '+slip.odds.toFixed(2)+')');
+}
+async function loadSlips(){
+  if(SB){ try{ ST.slips = await sbFetch('slips?select=*&order=created_at.desc&limit=200'); return; }
+          catch(e){} }
+  ST.slips = lsSlips();
+}
+async function updateSlip(id, patch){
+  const i=ST.slips.findIndex(x=>x.id===id); if(i<0) return;
+  Object.assign(ST.slips[i], patch);
+  let ok=false;
+  if(SB){ try{ await sbFetch('slips?id=eq.'+encodeURIComponent(id),
+      {method:'PATCH',body:JSON.stringify(patch)}); ok=true; }catch(e){} }
+  if(!ok) lsSlipSet(ST.slips);
+  renderLog();
+}
+async function delSlip(id){
+  ST.slips=ST.slips.filter(x=>x.id!==id);
+  let ok=false;
+  if(SB){ try{ await sbFetch('slips?id=eq.'+encodeURIComponent(id),{method:'DELETE'}); ok=true; }catch(e){} }
+  if(!ok) lsSlipSet(ST.slips);
+  renderLog(); toast('전표를 지웠다');
+}
 
 /* ═══════════════ 기록 · 정산 (§6.7) ═══════════════ */
 /* 저장소는 세 가지 중 되는 걸 쓴다:
@@ -1791,7 +1868,80 @@ function renderAutoScore(){
   el.innerHTML=html;
 }
 
+/* ── 내가 실제로 건 조합들 ── */
+function renderSlips(){
+  const el=$('#slipList'), list=ST.slips||[];
+  if(!list.length){
+    el.innerHTML='<div class="pad"><p class="note" style="margin:0">'+
+      '아직 기록한 조합이 없다.<br><b>조합 추천</b> 탭에서 조합을 펼치고 '+
+      '<b>이 조합 기록</b>을 누르면 여기 쌓인다.</p>'+
+      '<p class="note" style="margin:8px 0 0">위의 <b>자동 채점</b>은 앱의 예측이 얼마나 맞았는지 재는 것이고, '+
+      '여기는 <b>네가 실제로 건 것</b>을 따로 본다. 조합은 하나라도 틀리면 전부 날아가니까.</p></div>';
+    return;
+  }
+  const done=list.filter(s=>s.result==='W'||s.result==='L');
+  const staked=done.reduce((a,s)=>a+(+s.stake||0),0);
+  const back=done.reduce((a,s)=>a+(s.result==='W'?(+s.stake||0)*(+s.odds||0):0),0);
+  const roi= staked? (back-staked)/staked : null;
+  const tile=(l,v,cls,sub)=>'<div class="tile"><div class="lbl">'+l+'</div><div class="v '+(cls||'')+'">'+v+
+    '</div>'+(sub?'<div class="lbl" style="margin-top:3px">'+sub+'</div>':'')+'</div>';
+  let html='<div class="pad"><div class="tiles">'+
+    tile('기록한 조합', list.length, '', '정산 '+done.length+'건')+
+    tile('적중', done.filter(s=>s.result==='W').length, 'pos')+
+    tile('건 돈', staked? staked.toLocaleString()+'원':'—')+
+    tile('수익', done.length? (back-staked>=0?'+':'')+Math.round(back-staked).toLocaleString()+'원':'—',
+         done.length? (back-staked>=0?'pos':'neg'):'', roi==null?'':'ROI '+sgn(roi))+
+    '</div></div>';
+  html+='<div class="slip">'+list.map(s=>{
+    const open=ST.slipOpen===s.id;
+    const res = s.result==='W'?'<span class="badge b-rec">적중</span>'
+              : s.result==='L'?'<span class="badge b-bad">미적중</span>'
+              : s.result==='V'?'<span class="badge b-info">무효</span>'
+              : '<span class="badge b-info">경기 전</span>';
+    const hitLegs = (s.detail&&s.detail.legs)||null;
+    const prog = hitLegs? hitLegs.filter(x=>x.hit).length+'/'+hitLegs.length+' 맞음' : '';
+    return '<div class="row" data-sl="'+s.id+'" tabindex="0" role="button" aria-expanded="'+open+'">'+
+      '<div class="no">'+(s.legs.length)+'폴</div>'+
+      '<div class="tm"><div class="vs">'+(s.style||'직접')+' · 배당 '+(+s.odds).toFixed(2)+'</div>'+
+        '<div class="sub"><span>'+(+s.stake||0).toLocaleString()+'원</span>'+
+        '<span>적중확률 '+pct(+s.prob||0)+'</span>'+
+        '<span>'+String(s.created_at||'').slice(5,16).replace('T',' ')+'</span>'+
+        (s.owner_name?'<span>'+s.owner_name+'</span>':'')+
+        (prog?'<span>'+prog+'</span>':'')+'</div></div>'+
+      '<div class="oz"><div class="o"><small>환급</small>'+
+        Math.round((+s.stake||0)*(+s.odds||0)).toLocaleString()+'</div>'+
+        '<div class="exp">'+(open?'▾':'▸')+'</div></div>'+
+      '<div class="verdict">'+res+
+        '<span class="badge b-info">EV '+sgn(+s.ev||0)+'</span></div>'+
+      (open? '<div class="verdict" style="flex-direction:column;align-items:stretch;gap:0">'+
+        s.legs.map((l,i)=>{
+          const h = hitLegs&&hitLegs[i];
+          const mark = !h? '' : (h.hit? '<span class="badge b-rec">적중</span>'
+                                      : '<span class="badge b-bad">실패</span>');
+          return '<div class="leg"><span class="num">'+String(l.no).padStart(3,'0')+'</span>'+
+            '<span>'+(l.label||(l.home+' vs '+l.away))+'<br>'+
+            '<span style="color:var(--muted);font-size:11.5px">'+l.selName+
+            (h&&h.score?' · '+h.score:'')+'</span></span>'+
+            '<b>'+od(l.odds)+' '+mark+'</b></div>';
+        }).join('')+
+        '<div class="rowf" style="margin-top:9px">'+
+          '<button class="btn sm" data-slipdel="'+s.id+'">전표 삭제</button>'+
+          '<span class="note" style="margin:0">경기가 끝나면 자동으로 채점된다. 손댈 필요 없다.</span>'+
+        '</div></div>' : '')+
+      '</div>';
+  }).join('')+'</div>';
+  el.innerHTML=html;
+  el.querySelectorAll('[data-sl]').forEach(row=>{
+    row.onclick=e=>{ if(e.target.closest('[data-slipdel]')) return;
+      ST.slipOpen = ST.slipOpen===row.dataset.sl ? null : row.dataset.sl; renderSlips(); };
+    row.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); row.click(); } };
+  });
+  el.querySelectorAll('[data-slipdel]').forEach(b=> b.onclick=e=>{
+    e.stopPropagation(); delSlip(b.dataset.slipdel); });
+}
+
 function renderLog(){
+  renderSlips();
   renderAutoScore();
   const L=$('#logList');
   if(!ST.picks.length){ L.innerHTML='<div class="empty">저장된 픽이 없다. 회차 상세에서 <b>이 픽 기록에 저장</b>을 눌러라.</div>'; }
@@ -2247,7 +2397,7 @@ async function pullRoundSB(){
 
 /* 로그인·승인이 끝난 뒤 실행되는 본 시작 */
 async function boot(){
-  await loadPicks(); renderLog();
+  await loadPicks(); await loadSlips(); renderLog();
   await pullRoundSB();
   await pullScoreboard();
 }

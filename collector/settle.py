@@ -96,6 +96,97 @@ def metrics(rows, pkey="p"):
                       for b in bins if b[2] >= 8]}
 
 
+def settle_slips(res):
+    """베팅 전표(조합) 자동 정산 — 전부 맞아야 적중.
+    취소·무효 경기는 베트맨 적중특례대로 배당 1.0 으로 처리한다."""
+    sec = _secrets()
+    if not sec:
+        return 0
+    url, key = sec
+    try:
+        rows = _sb(url, key, "slips?select=*&result=eq.&order=created_at")
+    except Exception as e:
+        msg = str(e)
+        if "404" in msg:
+            print("  (베팅 전표 표가 아직 없다 — setup/supabase_slips.sql 을 실행하면 조합도 자동 채점된다)")
+        else:
+            print(f"  전표 조회 실패: {msg}")
+        return 0
+    if not rows:
+        return 0
+
+    done = 0
+    for sl in rows:
+        legs = sl.get("legs") or []
+        detail, decided_all = [], True
+        alive_odds, all_hit, voided = 1.0, True, 0
+        for l in legs:
+            games = res.get((l.get("league"), l.get("home"), l.get("away")))
+            g = None
+            if games:
+                kick = (l.get("kick") or "")[:10]
+                try:
+                    kd = dt.date.fromisoformat(kick)
+                except ValueError:
+                    kd = None
+                for date, hg, ag in games:
+                    if kd is None or abs((date - kd).days) <= 2:
+                        g = (date, hg, ag); break
+            if not g:
+                decided_all = False; break            # 아직 안 끝난 경기가 있다
+            y = outcome(l.get("market"), l.get("line"), g[1], g[2])
+            if y is None:                              # 무효 → 배당 1.0
+                detail.append({"no": l.get("no"), "hit": True, "void": True,
+                               "score": f"{g[1]}-{g[2]}"})
+                voided += 1
+                continue
+            hit = (l.get("sel") == y)
+            alive_odds *= float(l.get("odds") or 1)
+            if not hit:
+                all_hit = False
+            detail.append({"no": l.get("no"), "hit": hit, "void": False,
+                           "score": f"{g[1]}-{g[2]}"})
+        if not decided_all:
+            continue
+
+        result = "W" if all_hit else "L"
+        payout = round(float(sl.get("stake") or 0) * alive_odds, 0) if all_hit else 0
+        patch = {"result": result, "settled_at": dt.datetime.now().isoformat(timespec="seconds"),
+                 "detail": {"legs": detail, "effOdds": round(alive_odds, 3),
+                            "voided": voided, "payout": payout}}
+        try:
+            _sb(url, key, "slips?id=eq." + str(sl["id"]), method="PATCH", body=patch)
+            done += 1
+        except Exception as e:
+            print(f"  전표 {sl['id']} 갱신 실패: {e}")
+    return done
+
+
+def _secrets():
+    p = os.path.join(HERE, "secrets.json")
+    if not os.path.exists(p):
+        return None
+    try:
+        d = json.load(open(p, encoding="utf-8"))
+    except Exception:
+        return None
+    u, k = (d.get("supabaseUrl") or "").rstrip("/"), d.get("serviceRoleKey") or ""
+    return (u, k) if u and k else None
+
+
+def _sb(url, key, path, method="GET", body=None):
+    import urllib.request
+    req = urllib.request.Request(url + "/rest/v1/" + path,
+                                 data=json.dumps(body).encode() if body is not None else None,
+                                 method=method)
+    for k, v in {"apikey": key, "Authorization": "Bearer " + key,
+                 "Content-Type": "application/json", "Prefer": "return=representation"}.items():
+        req.add_header(k, v)
+    with urllib.request.urlopen(req, timeout=30) as r:
+        t = r.read().decode("utf-8", "replace")
+    return json.loads(t) if t.strip() else None
+
+
 def main():
     if "--keep" not in sys.argv:
         print(f"  결과 내려받기… ({download()}개 리그)")
@@ -122,6 +213,11 @@ def main():
             rec = dict(r); rec["round"] = d["round"]
             rec["hit"] = (r["sel"] == y); rec["score"] = f"{g[1]}-{g[2]}"; rec["date"] = g[0].isoformat()
             settled.append(rec)
+
+    # 전표는 예측 파일과 무관하게 정산한다 (개별 픽 결과가 아직 없어도 조합은 끝났을 수 있다)
+    n_slip = settle_slips(res)
+    if n_slip:
+        print(f"  ✓ 베팅 전표 {n_slip}건 정산")
 
     if not settled:
         print(f"  아직 결과가 나온 경기가 없다 (대기 {pending}픽)."); return 0
