@@ -780,7 +780,8 @@ function bandOf(o){
 /* ═══════════════ 상태 ═══════════════ */
 const ST = { matches:[], sel:null, devig:'power', wMkt:1, zeroEven:true,
              onlyValue:false, lg:'ALL', round:'', picks:[], settleId:null,
-             snap:{}, snapAt:'', help:false, open:null, groups:[], scoreboard:null, bk:'all' };
+             snap:{}, snapAt:'', help:false, open:null, groups:[], scoreboard:null, bk:'all',
+             comboOpen:null };
 /* 스냅샷 키: 항목번호 + 마켓 + 기준선 */
 const snapKey = m => m.no+'|'+m.market+'|'+(m.line==null?'':(+m.line).toFixed(1));
 const $ = s=>document.querySelector(s), $$ = s=>[...document.querySelectorAll(s)];
@@ -1394,33 +1395,64 @@ function runCombo(){
       ' 구간에 만들 수 있는 조합이 없다.<br>배당 범위를 넓히거나 최대 경기 수를 늘려봐라.</div></div>';
     return;
   }
-  const safe = found.slice().sort((a,b)=>b.p-a.p)[0];
-  const value= found.slice().sort((a,b)=>b.evLo-a.evLo)[0];
-  const bal  = found.slice().sort((a,b)=> (b.ev*0.5+b.p*0.5)-(a.ev*0.5+a.p*0.5))[0];
-  $('#comboMsg').textContent = found.length.toLocaleString()+'개 조합을 평가했다.';
-  [['🛡','안정형','적중확률이 가장 높은 조합',safe],
-   ['💎','가치형','기대값 하한이 가장 높은 조합',value],
-   ['⚖','균형형','기대값과 적중확률의 절충',bal]].forEach(([ic,name,desc,c])=>{
-    if(!c) return;
-    const taxed = c.odds>100;
-    const el=document.createElement('div'); el.className='combo';
-    el.innerHTML =
-      '<header><span style="font-size:15px">'+ic+'</span><b style="font-size:14px">'+name+'</b>'+
-        '<span class="big" style="margin-left:auto">'+c.odds.toFixed(2)+'</span></header>'+
-      '<div class="lbl">'+desc+'</div>'+
-      '<div>'+c.legs.map(l=>'<div class="leg"><span class="num">'+String(l.no).padStart(3,'0')+'</span>'+
-        '<span>'+l.label+'<br><span style="color:var(--muted);font-size:11.5px">'+l.sel+'</span></span>'+
-        '<b>'+od(l.odds)+'</b></div>').join('')+'</div>'+
-      '<div class="kv"><span>적중 확률</span><b>'+pct(c.p)+'</b></div>'+
-      '<div class="kv"><span>조합 기대값</span><b style="color:'+(c.ev>0?'var(--good)':'var(--muted)')+'">'+sgn(c.ev)+'</b></div>'+
-      '<div class="kv"><span>기대값 80% 하한</span><b style="color:'+(c.evLo>0?'var(--good)':'var(--muted)')+'">'+sgn(c.evLo)+'</b></div>'+
-      '<p class="note" style="margin:0">'+(taxed?'배당 100배 초과 — 과세 대상이 될 수 있다. ':'')+
-        '조합은 각 픽의 마진이 곱해져 기대값이 낮아진다.</p>'+
-      '<button class="btn sm">조합 복사</button>';
-    el.querySelector('button').onclick=()=>{
+  // 균형형: 적중확률과 기대값을 각각 0~1 로 정규화해서 반반 섞는다
+  const ps=found.map(c=>c.p), es=found.map(c=>c.evLo);
+  const pMin=Math.min(...ps), pMax=Math.max(...ps), eMin=Math.min(...es), eMax=Math.max(...es);
+  const nz=(v,lo,hi)=> hi-lo<1e-12 ? .5 : (v-lo)/(hi-lo);
+  found.forEach(c=> c._bal = .5*nz(c.p,pMin,pMax) + .5*nz(c.evLo,eMin,eMax));
+
+  const TOP=5;
+  const styles=[
+    ['🛡','안정형','적중 확률이 높은 순', found.slice().sort((x,y)=>y.p-x.p)],
+    ['💎','가치형','기대값 하한이 높은 순', found.slice().sort((x,y)=>y.evLo-x.evLo)],
+    ['⚖','균형형','둘의 절충이 좋은 순',   found.slice().sort((x,y)=>y._bal-x._bal)]
+  ];
+  $('#comboMsg').textContent = found.length.toLocaleString()+'개 조합을 평가했다. 각 분류 상위 '+TOP+'개.';
+
+  styles.forEach(([ic,name,desc,list])=>{
+    // 같은 조합이 분류마다 겹칠 수 있다 — 그건 정상이니 그대로 둔다
+    const picks=list.slice(0,TOP);
+    if(!picks.length) return;
+    const card=document.createElement('div');
+    card.className='card';
+    card.innerHTML='<h2><span style="font-size:15px">'+ic+'</span>'+name+
+      '<span class="lbl">'+desc+' · '+found.length.toLocaleString()+'개 중 '+picks.length+'개</span></h2>'+
+      '<div class="slip">'+picks.map((c,i)=>{
+        const key=name+i;
+        const open=ST.comboOpen===key;
+        const legs=c.legs.map(l=>String(l.no).padStart(3,'0')).join(' · ');
+        return '<div class="row" data-ck="'+key+'" tabindex="0" role="button" aria-expanded="'+open+'">'+
+          '<div class="no">'+(i+1)+'위</div>'+
+          '<div class="tm"><div class="vs">'+c.legs.length+'경기 · '+legs+'</div>'+
+            '<div class="sub"><span>적중 '+pct(c.p)+'</span>'+
+            '<span>EV '+sgn(c.ev)+'</span><span>하한 '+sgn(c.evLo)+'</span>'+
+            (c.odds>100?'<span style="color:var(--warn)">과세 구간</span>':'')+'</div></div>'+
+          '<div class="oz"><div class="o"><small>배당</small>'+c.odds.toFixed(2)+'</div>'+
+            '<div class="exp">'+(open?'▾':'▸')+'</div></div>'+
+          (open? '<div class="verdict" style="flex-direction:column;align-items:stretch;gap:0">'+
+            c.legs.map(l=>'<div class="leg"><span class="num">'+String(l.no).padStart(3,'0')+'</span>'+
+              '<span>'+l.label+'<br><span style="color:var(--muted);font-size:11.5px">'+l.sel+'</span></span>'+
+              '<b>'+od(l.odds)+'</b></div>').join('')+
+            '<div class="rowf" style="margin-top:9px">'+
+              '<button class="btn sm" data-copy="'+key+'">조합 복사</button>'+
+              '<span class="note" style="margin:0">조합은 각 픽의 마진이 곱해져 기대값이 낮아진다.</span>'+
+            '</div></div>' : '')+
+          '</div>';
+      }).join('')+'</div>';
+    out.appendChild(card);
+
+    card.querySelectorAll('[data-ck]').forEach(el=>{
+      el.onclick=e=>{ if(e.target.closest('[data-copy]')) return;
+        ST.comboOpen = ST.comboOpen===el.dataset.ck ? null : el.dataset.ck; runCombo(); };
+      el.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); } };
+    });
+    card.querySelectorAll('[data-copy]').forEach(btn=> btn.onclick=e=>{
+      e.stopPropagation();
+      const i=+btn.dataset.copy.replace(name,'');
+      const c=picks[i];
       const t=c.legs.map(l=>String(l.no).padStart(3,'0')+' '+l.sel).join(' / ');
-      navigator.clipboard?.writeText(t).then(()=>toast('복사: '+t),()=>toast(t)); };
-    out.appendChild(el);
+      navigator.clipboard?.writeText(t).then(()=>toast('복사: '+t),()=>toast(t));
+    });
   });
 }
 $('#runCombo').onclick = runCombo;
