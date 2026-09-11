@@ -1035,6 +1035,17 @@ function renderDetail(){
      (band? '<p class="note" style="margin:8px 0 0">배당 '+od(r.best.odds)+'는 <b>'+band.b+
         '</b> 구간이다. 이 구간의 과거 실측 평균 EV는 <b class="num">'+band.ev.toFixed(1)+
         '%</b>, 실현 ROI <b class="num">'+band.roi.toFixed(1)+'%</b> (n='+band.n.toLocaleString()+').</p>':'')+
+     '<hr><div class="lbl" style="margin-bottom:6px">해외 컨센서스 배당'+
+       (r.source==='model' ? ' — <span style="color:var(--bad)">넣어야 등급이 나온다</span>' : ' — 고치려면')+
+       '</div>'+
+       '<div class="rowf" style="margin-bottom:10px">'+
+       M.full.map((l,i)=>'<input class="num refin" data-i="'+i+'" inputmode="decimal" placeholder="'+l+'" '+
+         'style="width:80px" value="'+((m.ref&&m.ref[i])||'')+'">').join('')+
+       '<button class="btn pri sm" id="applyRef">적용</button>'+
+       (m.ref?'<button class="btn sm" id="clearRef">지우기</button>':'')+
+       '</div>'+
+       '<p class="note" style="margin:0 0 10px">베트맨 말고 <b>해외 북메이커</b> 배당이다. '+
+       '승무패만 넣어도 핸디·언오버·SUM 등급이 같이 나온다.</p>'+
      '<hr><div class="rowf">'+
        '<button class="btn pri sm" id="savePick">이 픽 기록에 저장</button>'+
        '<button class="btn sm" id="copyPick">조합용 텍스트 복사</button>'+
@@ -1108,6 +1119,12 @@ function renderDetail(){
      '<div class="scroll">'+otherMarkets+'</div></div></div>' : '')+
   '</div>';
 
+  $('#applyRef').onclick=()=>{
+    const v=[...document.querySelectorAll('#detail .refin')].map(x=>parseFloat(x.value)||0);
+    if(!v.every(x=>x>1)) return toast('배당을 모두 넣어라 (1 초과)');
+    m.ref=v; save(); render(); toast('해외 배당을 반영했다');
+  };
+  if($('#clearRef')) $('#clearRef').onclick=()=>{ m.ref=null; save(); render(); };
   $('#delMatch').onclick=()=>{ ST.matches=ST.matches.filter(x=>x.id!==m.id); ST.sel=null; save(); render(); };
   $('#savePick').onclick=()=>savePick(m,r);
   $('#copyPick').onclick=()=>{
