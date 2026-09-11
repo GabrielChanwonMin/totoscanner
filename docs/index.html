@@ -389,9 +389,17 @@ details summary:hover{color:var(--accent-ink)}
 <!-- ══════════ 조합 추천 ══════════ -->
 <section class="panel" id="p-combo">
   <div class="card" style="margin-bottom:14px">
-    <h2>목표 배당 구간</h2>
+    <h2>조합 조건</h2>
     <div class="pad grid" style="gap:12px">
-      <div class="chips" id="ranges"></div>
+      <div>
+        <div class="lbl" style="margin-bottom:6px">리그 — 고른 리그 안에서만 조합한다</div>
+        <div class="chips" id="comboLg"></div>
+        <p class="note" style="margin:7px 0 0" id="comboLgMsg"></p>
+      </div>
+      <div>
+        <div class="lbl" style="margin-bottom:6px">목표 배당</div>
+        <div class="chips" id="ranges"></div>
+      </div>
       <div class="grid g4">
         <div class="f"><label for="cMin">최소 배당</label><input class="num" id="cMin" value="1.5"></div>
         <div class="f"><label for="cMax">최대 배당</label><input class="num" id="cMax" value="2.0"></div>
@@ -793,7 +801,7 @@ function bandOf(o){
 const ST = { matches:[], sel:null, devig:'power', wMkt:1, zeroEven:true,
              onlyValue:false, lg:'ALL', round:'', picks:[], settleId:null,
              snap:{}, snapAt:'', help:false, open:null, groups:[], scoreboard:null, bk:'all',
-             comboOpen:null };
+             comboOpen:null, comboLg:new Set() };   // 비어 있으면 전체
 /* 스냅샷 키: 항목번호 + 마켓 + 기준선 */
 const snapKey = m => m.no+'|'+m.market+'|'+(m.line==null?'':(+m.line).toFixed(1));
 const $ = s=>document.querySelector(s), $$ = s=>[...document.querySelectorAll(s)];
@@ -1355,6 +1363,35 @@ $('#bulkSample').onclick = ()=>{ $('#bulk').value =
 
 /* ═══════════════ §6.6 조합 최적화 ═══════════════ */
 const RANGES=[[1.1,1.5],[1.5,2.0],[2.0,2.5],[2.5,3.0],[3.0,5.0],[5.0,10.0]];
+function renderComboLg(){
+  const box=$('#comboLg');
+  const has={};
+  ST.groups.forEach(G=>{ has[G.league]=(has[G.league]||0)+1; });
+  const lgs=Object.keys(DATA.leagues).filter(k=>has[k]);
+  if(!box.dataset.built || box.dataset.built!==lgs.join(',')){
+    box.dataset.built=lgs.join(',');
+    box.innerHTML='<button class="btn sm" data-clg="ALL">전체</button>'+
+      lgs.map(k=>'<button class="btn sm" data-clg="'+k+'">'+LGN(k)+
+        ' <span style="color:var(--faint)">'+has[k]+'</span></button>').join('');
+    box.onclick=e=>{
+      const b=e.target.closest('[data-clg]'); if(!b) return;
+      const v=b.dataset.clg;
+      if(v==='ALL') ST.comboLg.clear();
+      else { ST.comboLg.has(v) ? ST.comboLg.delete(v) : ST.comboLg.add(v); }
+      renderComboLg(); runCombo();
+    };
+  }
+  const on=ST.comboLg;
+  box.querySelectorAll('[data-clg]').forEach(b=>{
+    const v=b.dataset.clg;
+    b.setAttribute('aria-pressed', String(v==='ALL' ? on.size===0 : on.has(v)));
+  });
+  const usable=ST.groups.filter(G=>(!on.size||on.has(G.league)) && G.B && !G.B.error && G.B.source!=='model');
+  $('#comboLgMsg').innerHTML = on.size
+    ? '<b>'+[...on].map(LGN).join(' · ')+'</b> 안에서만 조합한다. 쓸 수 있는 경기 <b>'+usable.length+'개</b>.'
+    : '전체 리그에서 조합한다. 쓸 수 있는 경기 <b>'+usable.length+'개</b>.';
+}
+
 $('#ranges').innerHTML = RANGES.map(([a,b])=>
   '<button class="btn sm" data-r="'+a+','+b+'">'+a.toFixed(1)+'–'+b.toFixed(1)+'</button>').join('');
 $('#ranges').onclick = e=>{ const b=e.target.closest('[data-r]'); if(!b) return;
@@ -1364,7 +1401,9 @@ $('#ranges').onclick = e=>{ const b=e.target.closest('[data-r]'); if(!b) return;
 function candidates(pool){
   computeAll();
   const out=[];
+  const only = ST.comboLg;
   ST.groups.forEach(G=>{
+    if(only.size && !only.has(G.league)) return;              // 고른 리그만
     if(G.B && (G.B.error || G.B.source==='model')) return;   // 등급 없는 경기는 조합에서 뺀다
     G.rows.forEach(m=>{
       const r=m._r; if(!r || r.error) return;
@@ -2007,7 +2046,7 @@ function renderMethod(){
 function go(tab){
   $$('nav button').forEach(b=> b.setAttribute('aria-current', String(b.dataset.tab===tab)));
   $$('.panel').forEach(p=> p.classList.toggle('on', p.id==='p-'+tab));
-  if(tab==='combo') runCombo();
+  if(tab==='combo'){ renderComboLg(); runCombo(); }
   if(tab==='log') renderLog();
   if(tab==='admin') renderAdmin();
   window.scrollTo({top:0,behavior:'instant'});
