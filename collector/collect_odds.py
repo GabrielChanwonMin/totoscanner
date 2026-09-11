@@ -100,6 +100,26 @@ def merge(app_path=None):
     print(f"\n  저장: {os.path.basename(app_path)}")
 
 
+def main():
+    """실시간(The Odds API) 우선, 안 되면 football-data fixtures.csv 로 폴백."""
+    try:
+        import collect_odds_live as live
+        if live.load_key():
+            print("  실시간 해외 배당 (The Odds API)")
+            rc = live.main()
+            if rc == 0:
+                return
+            print("  → football-data 로 대체한다")
+        else:
+            print("  실시간 배당 키 없음 → football-data 사용")
+            print("    (the-odds-api.com 무료 가입 후 secrets.json 의 oddsApiKey 에 넣으면")
+            print("     회차 마감 전에도 배당을 바로 가져온다)")
+    except Exception as e:
+        print(f"  실시간 수집 건너뜀: {e}")
+    print("  football-data fixtures.csv")
+    merge()
+
+
 if __name__ == "__main__":
     if "--show" in sys.argv:
         o = parse(fetch())
@@ -107,4 +127,4 @@ if __name__ == "__main__":
         for (d, h, a), v in sorted(o.items(), key=lambda x: x[1]["date"]):
             print(f'  {d} {v["date"]} {v["time"]}  {h} vs {a}  1X2={v["1X2"]}  OU2.5={v["OU25"]}')
     else:
-        merge()
+        main()
