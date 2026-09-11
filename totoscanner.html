@@ -1604,7 +1604,12 @@ function initGate(){
       }
     }catch(err){
       const m = String(err.message||'');
-      gateMsg(/Failed to fetch|NetworkError|ERR_NAME/i.test(m)
+      gateMsg(/rate limit/i.test(m)
+              ? '<b>Supabase 가 확인 메일을 너무 많이 보내 잠시 막혔다.</b><br>'+
+                '관리자가 <b>Authentication › Sign In / Providers › Email</b> 에서 '+
+                '<b>Confirm email</b> 을 끄면 이 문제가 완전히 사라진다.<br>'+
+                '급하면 한 시간쯤 뒤에 다시 시도해도 된다.'
+            : /Failed to fetch|NetworkError|ERR_NAME/i.test(m)
               ? '서버에 연결하지 못했다.<br>docs/config.js 의 <b>supabaseUrl</b> 이 맞는지, 인터넷이 되는지 확인해라.'
             : /Invalid login/i.test(m) ? '이메일이나 비밀번호가 맞지 않는다.'
             : /already registered|User already/i.test(m) ? '이미 가입된 이메일이다. 로그인 탭으로 가라.'
