@@ -109,12 +109,15 @@ def load_key():
 
 
 def fetch(sport, key, markets="h2h,totals"):
+    """요청 1회 비용 = 지역 수 x 마켓 수. eu(1) x h2h,totals(2) = 2회.
+    5대 리그면 한 번 돌릴 때 10회 소모된다."""
     url = (f"{BASE}/sports/{sport}/odds/?apiKey={key}&regions=eu&markets={markets}"
            f"&oddsFormat=decimal&dateFormat=iso")
     req = urllib.request.Request(url, headers={"User-Agent": "totoscanner/1.0"})
     with urllib.request.urlopen(req, timeout=30) as r:
-        remain = r.headers.get("x-requests-remaining")
-        return json.loads(r.read().decode("utf-8")), remain
+        return (json.loads(r.read().decode("utf-8")),
+                r.headers.get("x-requests-remaining"),
+                r.headers.get("x-requests-used"))
 
 
 def consensus(event, market_key, want=None):
@@ -149,6 +152,9 @@ def build_index(app):
 
 def main():
     check = "--check" in sys.argv
+    # --cheap : 승무패만 받아 소모를 절반(5회)으로 줄인다.
+    #           언더오버 배당은 못 받지만, 같은 경기 승무패에서 파생되므로 등급은 나온다.
+    markets = "h2h" if "--cheap" in sys.argv else "h2h,totals"
     key = load_key()
     if not key:
         print("  The Odds API 키가 없다 (collector/secrets.json 의 oddsApiKey).")
@@ -167,12 +173,12 @@ def main():
         if m["market"] == "1X2":
             ours.setdefault(m["league"], []).append(m)
 
-    hit = 0; miss = []; remain = None
+    hit = 0; miss = []; remain = None; used = None
     for sport, lg in SPORTS.items():
         if lg not in ours:
             continue
         try:
-            events, remain = fetch(sport, key)
+            events, remain, used = fetch(sport, key, markets)
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf-8", "replace")[:160]
             print(f"  {lg}: 요청 실패 {e.code} {body}")
@@ -222,8 +228,22 @@ def main():
 
     n1 = sum(len(v) for v in ours.values())
     print(f"  승무패 {n1}경기 중 {hit}경기에 실시간 해외 배당을 붙였다.")
-    if remain:
-        print(f"  이번 달 남은 요청: {remain}회")
+    if "--cheap" in sys.argv:
+        print("  (--cheap: 승무패만 받아 소모를 절반으로 줄였다)")
+    if remain is not None:
+        try:
+            rm = int(remain)
+            runs = rm // 10
+            bar = "남음 %s회" % remain + (f" (이번 달 {used}회 사용)" if used else "")
+            if rm < 60:
+                print(f"  \033[31m⚠ 이번 달 요청이 거의 소진됐다 — {bar}\033[0m")
+                print(f"    앞으로 {runs}번쯤 더 돌릴 수 있다. 다음 달 1일에 초기화된다.")
+            elif rm < 150:
+                print(f"  \033[33m이번 달 {bar} · 약 {runs}번 더 가능\033[0m")
+            else:
+                print(f"  이번 달 {bar} · 약 {runs}번 더 가능")
+        except ValueError:
+            print(f"  이번 달 남은 요청: {remain}")
     if miss:
         print(f"  ⚠ 못 붙인 {len(miss)}경기 — 이름이 다를 수 있다:")
         for lg, h, a in miss[:10]:
