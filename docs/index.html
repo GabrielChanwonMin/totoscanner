@@ -245,7 +245,8 @@ details summary:hover{color:var(--accent-ink)}
 <div id="gate" hidden>
   <div class="box">
     <div class="brand"><b>토토스캐너</b><span class="tag">PROTO VALUE SCANNER</span></div>
-    <p class="note" style="margin:0">승인된 사람만 볼 수 있다.</p>
+    <p class="note" style="margin:0">승인된 사람만 볼 수 있다.
+      <a href="guide.html" style="color:var(--accent-ink)">사용 설명서 →</a></p>
     <div class="tabs">
       <button data-mode="login" aria-pressed="true">로그인</button>
       <button data-mode="signup" aria-pressed="false">가입 신청</button>
@@ -284,6 +285,7 @@ details summary:hover{color:var(--accent-ink)}
     <button data-tab="combo">조합 추천</button>
     <button data-tab="log">성적표</button>
     <button data-tab="method">방법론 · 검증</button>
+    <button onclick="window.open('guide.html','_blank')" title="용어와 지표 설명">설명서 ↗</button>
     <button data-tab="admin" id="tabAdmin" hidden>회원 관리</button>
   </nav>
 </header>

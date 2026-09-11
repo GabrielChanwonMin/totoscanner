@@ -1,0 +1,400 @@
+<title>토토스캐너 사용 설명서</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#EDEFF2; --surface:#FFFFFF; --surface2:#F5F7F9;
+  --ink:#0D1117; --ink2:#2B343D; --muted:#5A6672; --faint:#8B97A3;
+  --line:#D7DBE0; --line2:#E6E9ED;
+  --accent:#2E43C9; --accent-soft:#E7EAFB; --accent-ink:#2E43C9;
+  --good:#0B7A46; --good-soft:#E2F2E9; --warn:#A66A00; --warn-soft:#FAF0DC;
+  --bad:#9B2C2C; --bad-soft:#F7E7E7; --stripe:rgba(13,17,23,.022);
+  --shadow:0 1px 2px rgba(13,17,23,.06),0 8px 24px -18px rgba(13,17,23,.35);
+  --sans:"IBM Plex Sans KR",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B0F12; --surface:#141A20; --surface2:#1A2128;
+  --ink:#E7ECF1; --ink2:#C4CDD6; --muted:#8A96A2; --faint:#66727E;
+  --line:#242C34; --line2:#1E252C;
+  --accent:#8B9BFF; --accent-soft:#1B2340; --accent-ink:#A6B2FF;
+  --good:#3FC783; --good-soft:#102A1E; --warn:#DDA23A; --warn-soft:#2C2314;
+  --bad:#E37070; --bad-soft:#301A1A; --stripe:rgba(255,255,255,.022);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -18px rgba(0,0,0,.8);
+}}
+:root[data-theme="dark"]{
+  --bg:#0B0F12; --surface:#141A20; --surface2:#1A2128;
+  --ink:#E7ECF1; --ink2:#C4CDD6; --muted:#8A96A2; --faint:#66727E;
+  --line:#242C34; --line2:#1E252C;
+  --accent:#8B9BFF; --accent-soft:#1B2340; --accent-ink:#A6B2FF;
+  --good:#3FC783; --good-soft:#102A1E; --warn:#DDA23A; --warn-soft:#2C2314;
+  --bad:#E37070; --bad-soft:#301A1A; --stripe:rgba(255,255,255,.022);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -18px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.lbl{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--faint)}
+header{background:var(--surface);border-bottom:1px solid var(--line)}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px}
+.hd{padding:26px 20px 0;max-width:760px;margin:0 auto}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand b{font-size:21px;font-weight:700;letter-spacing:-.02em}
+.brand .tag{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--accent-ink);
+  border:1px solid var(--accent);border-radius:3px;padding:1px 6px;text-transform:uppercase}
+.sub{color:var(--muted);font-size:14px;margin:8px 0 0}
+.mow{height:3px;display:flex;max-width:760px;margin:22px auto 0;padding:0 20px}
+.mow i{flex:1;height:3px}
+.mow i:nth-child(odd){background:var(--line)} .mow i:nth-child(even){background:var(--line2)}
+main{max-width:760px;margin:0 auto;padding:30px 20px 90px}
+h2{font-size:19px;font-weight:700;margin:42px 0 4px;letter-spacing:-.01em;scroll-margin-top:16px}
+h2:first-of-type{margin-top:8px}
+h2 .n{font-family:var(--mono);font-size:12px;color:var(--accent-ink);
+  border:1px solid var(--accent);border-radius:3px;padding:1px 6px;margin-right:9px;vertical-align:3px}
+h3{font-size:15.5px;font-weight:600;margin:26px 0 6px}
+p{margin:10px 0}
+b,strong{font-weight:600;color:var(--ink)}
+code{font-family:var(--mono);font-size:.88em;background:var(--surface2);
+  border:1px solid var(--line2);border-radius:3px;padding:1px 5px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:5px;
+  padding:16px 18px;margin:16px 0;box-shadow:var(--shadow)}
+.card.warn{border-color:var(--warn);background:var(--warn-soft)}
+.card.good{border-color:var(--good);background:var(--good-soft)}
+.card.bad{border-color:var(--bad);background:var(--bad-soft)}
+.card > :first-child{margin-top:0} .card > :last-child{margin-bottom:0}
+.formula{font-family:var(--mono);font-size:14px;background:var(--surface2);
+  border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:4px;
+  padding:13px 15px;margin:14px 0;overflow-x:auto;white-space:pre;line-height:1.75}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line2);vertical-align:top}
+thead th{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--faint);font-weight:500;border-bottom:1px solid var(--line)}
+tbody tr:nth-child(even){background:var(--stripe)}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10.5px;
+  font-weight:600;letter-spacing:.04em;padding:2px 7px;border-radius:3px;border:1px solid;white-space:nowrap}
+.b-rec{color:var(--good);border-color:var(--good);background:var(--good-soft)}
+.b-watch{color:var(--warn);border-color:var(--warn);background:var(--warn-soft)}
+.b-info{color:var(--muted);border-color:var(--line);background:var(--surface2)}
+.b-flag{color:var(--accent-ink);border-color:var(--accent);background:var(--accent-soft)}
+.b-bad{color:var(--bad);border-color:var(--bad);background:var(--bad-soft)}
+.pos{color:var(--good);font-weight:600} .neg{color:var(--bad);font-weight:600}
+ul,ol{padding-left:22px;margin:10px 0} li{margin:5px 0}
+.toc{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:14px 18px;margin:20px 0}
+.toc ol{margin:8px 0 0;padding-left:20px;columns:2;column-gap:26px}
+@media(max-width:560px){.toc ol{columns:1}}
+.toc a{color:var(--ink2);text-decoration:none;font-size:14px}
+.toc a:hover{color:var(--accent-ink);text-decoration:underline}
+.cta{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;
+  padding:11px 20px;border-radius:4px;font-weight:600;font-size:15px;margin:6px 8px 6px 0}
+.cta:hover{filter:brightness(1.1)}
+.cta.ghost{background:var(--surface);color:var(--accent-ink);border:1px solid var(--accent)}
+hr{border:0;border-top:1px solid var(--line2);margin:34px 0}
+footer{border-top:1px solid var(--line);padding:22px 0 0;margin-top:44px;color:var(--faint);font-size:13px}
+a{color:var(--accent-ink)}
+.kv{display:flex;justify-content:space-between;gap:14px;padding:6px 0;border-bottom:1px solid var(--line2)}
+.kv:last-child{border-bottom:0}
+.kv b{font-family:var(--mono);font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<header>
+  <div class="hd">
+    <div class="brand"><b>토토스캐너</b><span class="tag">사용 설명서</span></div>
+    <p class="sub">베트맨 프로토 승부식 픽의 <b>적정배당</b>과 <b>기대값</b>을 계산하는 도구.
+      이 문서는 화면에 나오는 숫자와 배지가 각각 무슨 뜻인지 설명한다.</p>
+  </div>
+  <div class="mow"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+</header>
+
+<main>
+
+<div class="card bad">
+  <p style="margin:0"><b>먼저 읽어라.</b> 이 앱은 “이기는 픽”을 찾아주지 않는다.
+  실제 경기 10,880건을 검증한 결과 <b>대부분의 픽은 기대값이 음수</b>고,
+  걸 만한 픽은 <b>10경기에 1개도 안 나온다</b>. 이 앱이 제일 잘하는 일은
+  <b>“이번 회차엔 걸 게 없다”고 말해주는 것</b>이다.</p>
+</div>
+
+<div class="toc">
+  <div class="lbl">목차</div>
+  <ol>
+    <li><a href="#start">시작하기</a></li>
+    <li><a href="#screens">화면 다섯 개</a></li>
+    <li><a href="#ev">EV — 가장 중요한 숫자</a></li>
+    <li><a href="#grade">등급 세 가지</a></li>
+    <li><a href="#numbers">숫자 읽는 법</a></li>
+    <li><a href="#badge">배지 사전</a></li>
+    <li><a href="#risk">위험 요소</a></li>
+    <li><a href="#team">팀 · 맞대결 기록</a></li>
+    <li><a href="#bucket">배당 구간별 적중/실패</a></li>
+    <li><a href="#combo">조합 추천</a></li>
+    <li><a href="#score">성적표</a></li>
+    <li><a href="#why">왜 믿을 만한가</a></li>
+    <li><a href="#myth">흔한 오해</a></li>
+  </ol>
+</div>
+
+<h2 id="start"><span class="n">1</span>시작하기</h2>
+<p>주소에 들어가면 <b>로그인 화면</b>이 뜬다. 승인된 사람만 볼 수 있게 막혀 있다.</p>
+<ol>
+  <li><b>가입 신청</b> 탭에서 이름·이메일·비밀번호(6자 이상)를 넣는다</li>
+  <li><b>“승인 대기 중”</b> 이 뜬다 — 정상이다</li>
+  <li>관리자가 승인하면 새로고침해서 들어올 수 있다</li>
+</ol>
+<p>확인 메일이 온다면 링크를 한 번 눌러준 뒤 <b>로그인</b> 탭으로 들어오면 된다.</p>
+
+<h2 id="screens"><span class="n">2</span>화면 다섯 개</h2>
+<div class="scroll"><table>
+<thead><tr><th>탭</th><th>하는 일</th></tr></thead>
+<tbody>
+<tr><td><b>이번 회차</b></td><td>이번 회차 경기 목록. 경기를 누르면 그 경기의 모든 게임유형이 펼쳐진다. 여기가 주 화면이다.</td></tr>
+<tr><td><b>경기 입력</b></td><td>수집기가 자동으로 채운다. 직접 넣거나 고칠 때만 쓴다.</td></tr>
+<tr><td><b>조합 추천</b></td><td>목표 배당 구간을 정하면 조합을 짜준다.</td></tr>
+<tr><td><b>성적표</b></td><td>지난 예측이 실제로 얼마나 맞았는지. 자동으로 채점된다.</td></tr>
+<tr><td><b>방법론 · 검증</b></td><td>이 앱의 계산이 실제 경기에서 검증된 결과. 믿을지 말지 판단할 근거.</td></tr>
+</tbody></table></div>
+
+<h3>경기 한 줄 읽는 법</h3>
+<div class="formula">001+  아스널 vs 에버턴                              ▸
+      EPL · 09-12 23:00 · 4개 유형 · 가치 픽 2
+      🟡 관심  핸디캡 -1.0 · 핸디 승 · EV +11.2%   해외 컨센서스 기준</div>
+<ul>
+  <li><b>001+</b> — 베트맨 항목번호. <code>+</code>는 이 경기에 여러 유형이 있다는 뜻</li>
+  <li><b>4개 유형</b> — 승무패·핸디캡·언더오버·SUM 중 몇 개가 발매됐는지</li>
+  <li><b>가치 픽 2</b> — 이 경기에서 기대값이 양수인 선택지 개수</li>
+  <li>아랫줄은 <b>이 경기에서 가장 나은 픽</b> 요약</li>
+</ul>
+<p>줄을 <b>누르면</b> 그 경기의 게임유형이 전부 펼쳐지고, 각 배당 아래에 EV가 붙는다.</p>
+
+<h2 id="ev"><span class="n">3</span>EV — 가장 중요한 숫자</h2>
+<p><b>EV</b>는 기대값(Expected Value). <b>이 픽에 계속 걸었을 때 한 판당 평균 몇 %가 남거나 사라지는지</b>다.</p>
+<div class="formula">EV = 적정확률 × 배당 − 1</div>
+
+<h3>예시로 보면</h3>
+<p>아스널 승리에 베트맨이 <b>1.40배</b>를 주고, 해외 시장은 아스널 승률을 <b>72.6%</b>로 본다고 하자.</p>
+<div class="formula">1,000원을 건다
+  72.6% 확률로 → 1,400원
+  27.4% 확률로 →     0원
+
+평균 회수액 = 0.726 × 1,400 = 1,016원
+EV = 1,016 / 1,000 − 1 = +1.6%</div>
+<p>1,000원 걸면 <b>평균 16원이 남는다</b>는 뜻이다. 매번 16원을 버는 게 아니라, 아주 여러 번 걸었을 때의 평균이다.</p>
+
+<div class="card">
+<div class="kv"><span>EV <b class="pos">+5%</b></span><span>1,000원당 평균 50원 이익</span></div>
+<div class="kv"><span>EV <b>0%</b></span><span>본전. 마진이 없는 공정한 배당</span></div>
+<div class="kv"><span>EV <b class="neg">−20%</b></span><span>1,000원당 평균 200원 손실</span></div>
+<div class="kv"><span>EV <b class="neg">−44%</b></span><span>고배당 구간의 현실. 판당 440원씩 태우는 중</span></div>
+</div>
+
+<h3>EV 80% 하한</h3>
+<p>확률 추정에는 오차가 있다. 그 오차까지 감안한 <b>비관적인 EV</b>가 “80% 하한”이다.</p>
+<p>EV가 <code>+1.6%</code>인데 하한이 <code>−6.6%</code>라면, <b>추정이 조금만 틀려도 마이너스로 뒤집힌다</b>는 뜻이다.</p>
+
+<h2 id="grade"><span class="n">4</span>등급 세 가지</h2>
+<div class="scroll"><table>
+<thead><tr><th>등급</th><th>조건</th><th>뜻</th></tr></thead>
+<tbody>
+<tr><td><span class="badge b-rec">🟢 추천</span></td><td>EV 하한까지 양수</td>
+    <td>추정이 좀 틀려도 이익이 유지된다. 실제로 걸어볼 후보</td></tr>
+<tr><td><span class="badge b-watch">🟡 관심</span></td><td>EV는 양수, 하한은 음수</td>
+    <td><b>초록불이 아니다.</b> 양수처럼 보이지만 확실하지 않다</td></tr>
+<tr><td><span class="badge b-info">⚪ 참고</span></td><td>EV 음수</td>
+    <td>걸면 장기적으로 손해다</td></tr>
+</tbody></table></div>
+
+<div class="card warn">
+<p style="margin:0 0 8px"><b>그런데 🟢추천도 그냥 믿으면 안 된다.</b></p>
+<p style="margin:0">베트맨 마진을 얹고 실제 데이터로 시뮬레이션했을 때, 신뢰구간이 0을 넘긴 건
+<b>EV +5% 이상</b>뿐이었다.</p>
+<div class="scroll"><table style="margin-bottom:0">
+<thead><tr><th>EV 기준</th><th class="n">픽 수</th><th class="n">ROI</th><th>95% 신뢰구간</th></tr></thead>
+<tbody>
+<tr><td>EV &gt; 0</td><td class="n">513</td><td class="n">+5.6%</td><td>[−0.3%, +11.7%] ← 0 포함</td></tr>
+<tr><td>EV &gt; +2%</td><td class="n">236</td><td class="n">+8.5%</td><td>[−1.1%, +17.1%] ← 0 포함</td></tr>
+<tr><td><b>EV &gt; +5%</b></td><td class="n">64</td><td class="n"><b class="pos">+28.4%</b></td><td><b>[+9.9%, +48.6%]</b> ← 0 넘김</td></tr>
+</tbody></table></div>
+</div>
+<p><b>실전 기준: EV +5% 미만은 넘겨라.</b> 그런 픽은 10경기당 1개도 안 나온다. 회차마다 뭔가 걸어야 한다는 생각을 버리는 게 이 앱을 제대로 쓰는 법이다.</p>
+
+<h2 id="numbers"><span class="n">5</span>숫자 읽는 법</h2>
+<p>경기를 펼치고 유형 하나를 누르면 비교표가 나온다.</p>
+<div class="scroll"><table>
+<thead><tr><th></th><th class="n">승</th><th class="n">무</th><th class="n">패</th><th>뜻</th></tr></thead>
+<tbody>
+<tr><td>베트맨 (현재)</td><td class="n">1.40</td><td class="n">4.30</td><td class="n">7.00</td>
+    <td>실제로 살 수 있는 배당</td></tr>
+<tr><td><b>토토스캐너 적정배당</b></td><td class="n">1.38</td><td class="n">5.19</td><td class="n">11.25</td>
+    <td>마진이 0이라면 이래야 한다는 값</td></tr>
+<tr><td>해외 컨센서스</td><td class="n">1.38</td><td class="n">5.19</td><td class="n">11.25</td>
+    <td>해외 북메이커 평균에서 마진을 뺀 값</td></tr>
+<tr><td>자체 모델 (DC)</td><td class="n">1.59</td><td class="n">4.04</td><td class="n">8.21</td>
+    <td>팀 전력만으로 계산한 값. 참고용</td></tr>
+<tr><td>베트맨 내재확률</td><td class="n">68.8%</td><td class="n">19.7%</td><td class="n">11.5%</td>
+    <td>베트맨 배당이 말하는 확률(마진 포함)</td></tr>
+<tr><td>기대값 (EV)</td><td class="n pos">+0.6%</td><td class="n">−17.1%</td><td class="n">−37.8%</td>
+    <td>이 픽의 기대값</td></tr>
+<tr><td>EV 80% 하한</td><td class="n">−6.6%</td><td class="n">−38.4%</td><td class="n">−45.0%</td>
+    <td>비관적으로 봤을 때</td></tr>
+</tbody></table></div>
+
+<div class="card">
+<p style="margin:0 0 6px"><b>핵심은 두 줄 비교다.</b></p>
+<p style="margin:0"><b>베트맨 배당</b>이 <b>적정배당</b>보다 <b>높으면</b> 후하게 주는 것 = EV 양수.<br>
+낮으면 박하게 주는 것 = EV 음수. 위 표에선 승 <code>1.40 &gt; 1.38</code> 이라 겨우 양수다.</p>
+</div>
+
+<h3>마진 (오버라운드)</h3>
+<p>화면 상단 <b>베트맨 마진</b>은 베트맨이 배당에 얹어둔 몫이다. 보통 <b>15%</b> 근처다.
+해외 시장은 <b>3~7%</b>. 이 차이가 대부분의 픽이 마이너스인 이유다.</p>
+
+<h2 id="badge"><span class="n">6</span>배지 사전</h2>
+<div class="scroll"><table>
+<thead><tr><th>배지</th><th>뜻</th></tr></thead>
+<tbody>
+<tr><td><span class="badge b-flag">해외 컨센서스 기준</span></td>
+    <td>해외 배당이 있어서 그걸 기준으로 계산했다. <b>가장 믿을 만한 상태</b></td></tr>
+<tr><td><span class="badge b-bad">모델 단독 · 등급 없음</span></td>
+    <td>해외 배당이 없어 자체 모델로만 계산했다. 검증에서 이 방식은 <b>ROI −12%</b>였기에 <b>등급을 매기지 않는다.</b> 참고만 해라</td></tr>
+<tr><td><span class="badge b-info">파생</span></td>
+    <td>이 유형엔 해외 배당이 없어, 같은 경기 승무패에서 뽑아냈다. 핸디캡은 거의 정확하지만 언더오버·SUM은 더 흔들린다</td></tr>
+<tr><td><span class="badge b-flag">⚡ 지연 배당</span></td>
+    <td>해외 시장 확률이 4%p 이상 움직였는데 베트맨은 그대로다. 보통 <b>부상·라인업 뉴스</b>가 원인이고, 실제 기회가 생기는 지점이다</td></tr>
+<tr><td><span class="badge b-flag">승격팀 표본 적음</span></td>
+    <td>최근 리그 경기가 적어 팀 전력 추정이 불안정하다</td></tr>
+<tr><td><span class="badge b-info">베트맨 +0.04 / −0.10</span></td>
+    <td>직전에 저장한 시점 대비 배당이 움직인 폭</td></tr>
+</tbody></table></div>
+
+<h2 id="risk"><span class="n">7</span>위험 요소</h2>
+<p>픽을 고르면 아래에 <b>이 픽의 위험 요소</b> 카드가 나온다. 점 색이 심각도다
+(<b style="color:var(--bad)">●</b> 높음 / <b style="color:var(--warn)">●</b> 중간 / <b style="color:var(--muted)">●</b> 참고).</p>
+<ul>
+  <li><b>지연 배당 의심</b> — 뉴스가 있었는데 베트맨이 아직 반영 못 한 상태</li>
+  <li><b>모델·시장 불일치</b> — 둘이 크게 다르면 하나는 틀렸다</li>
+  <li><b>불리한 배당 구간</b> — 그 구간의 과거 실측 성적을 같이 보여준다</li>
+  <li><b>정배를 자주 놓치는 팀</b> — “이 팀은 시장이 유리하게 본 89경기에서 34번만 이겼다”</li>
+  <li><b>이변이 잦은 맞대결</b> — 이 조합에서 시장 예상이 자주 빗나갔다</li>
+  <li><b>일정 과밀</b> — 같은 팀이 이 회차에 또 나온다 = 로테이션 위험</li>
+</ul>
+<div class="card warn">
+<p style="margin:0"><b>부상·출전정지 정보는 없다.</b> 유료 데이터가 필요해서 아직 안 넣었다.
+다만 <b>⚡지연 배당</b>이 그 역할을 어느 정도 대신한다 — 주전이 빠지면 해외 시장이 먼저 움직이기 때문이다.</p>
+</div>
+
+<h2 id="team"><span class="n">8</span>팀 · 맞대결 기록</h2>
+<p>실제 경기 <b>10,880건</b>에서 뽑은 기록이다.</p>
+<div class="scroll"><table>
+<thead><tr><th></th><th class="n">승무패</th><th class="n">시장 예상</th><th class="n">실제</th><th class="n">정배 적중</th><th class="n">역배 적중</th></tr></thead>
+<tbody>
+<tr><td>아스널</td><td class="n">143-42-46</td><td class="n">57%</td><td class="n pos">62%</td><td class="n">135/202</td><td class="n">8/29</td></tr>
+<tr><td>에버턴</td><td class="n">74-62-95</td><td class="n">31%</td><td class="n">32%</td><td class="n">34/89</td><td class="n">40/142</td></tr>
+</tbody></table></div>
+<ul>
+  <li><b>시장 예상</b>보다 <b>실제</b>가 높으면 그동안 <b>과소평가</b>된 팀이다 (아스널: 57% → 62%)</li>
+  <li><b>정배 적중</b> — 시장이 이 팀을 유리하게 봤을 때 실제로 이긴 횟수</li>
+  <li><b>역배 적중</b> — 불리하게 봤는데 이긴 횟수</li>
+</ul>
+<p>아래 <b>최근 맞대결</b>에는 지난 6경기의 스코어와, 그때 <b>시장 예상이 맞았는지(시장 적중 / 이변)</b>가 붙는다.</p>
+
+<h2 id="bucket"><span class="n">9</span>배당 구간별 적중 / 실패</h2>
+<p>“이 배당이면 몇 번 맞고 몇 번 터지나”를 실제 경기로 센 표다. 회차 화면 아래쪽에 있다.</p>
+<div class="scroll"><table>
+<thead><tr><th>배당 구간</th><th class="n">픽 수</th><th class="n">적중</th><th class="n">실패</th><th class="n">적중률</th><th class="n">ROI</th></tr></thead>
+<tbody>
+<tr><td>1.30–1.40</td><td class="n">628</td><td class="n">466</td><td class="n">162</td><td class="n">74.2%</td><td class="n">+0.0%</td></tr>
+<tr><td>1.40–1.50</td><td class="n">681</td><td class="n">482</td><td class="n">199</td><td class="n">70.8%</td><td class="n pos">+2.3%</td></tr>
+<tr><td><b>1.50–1.60</b></td><td class="n">728</td><td class="n">465</td><td class="n">263</td><td class="n">63.9%</td><td class="n">−1.5%</td></tr>
+<tr><td>2.50–3.00</td><td class="n">2,915</td><td class="n">993</td><td class="n">1,922</td><td class="n">34.1%</td><td class="n neg">−6.6%</td></tr>
+<tr><td>3.50–4.50</td><td class="n">7,477</td><td class="n">1,856</td><td class="n">5,621</td><td class="n">24.8%</td><td class="n neg">−4.0%</td></tr>
+<tr><td>8.00–12.00</td><td class="n">1,192</td><td class="n">104</td><td class="n">1,088</td><td class="n">8.7%</td><td class="n neg">−18.2%</td></tr>
+</tbody></table></div>
+<p><b>전체 기간 / 올 시즌 / 지난 시즌</b> 버튼으로 바꿔 볼 수 있다.
+해외 시장 배당 기준이며, <b>베트맨은 같은 경기에 더 낮은 배당을 준다</b>(마진이 크니까).</p>
+<div class="card">
+<p style="margin:0"><b>여기서 읽어야 할 것:</b> 구간별로 고르지는 않지만
+<b>배당 3.5 이상은 예외 없이 크게 손해</b>다. 역배로 갈수록 마진이 무거워지기 때문이고,
+그래서 가치 픽은 거의 항상 <b>저배당 정배</b>에서 나온다.</p>
+</div>
+
+<h2 id="combo"><span class="n">10</span>조합 추천</h2>
+<p>목표 배당 구간을 고르면 조합을 짜준다. 세 가지를 준다.</p>
+<div class="scroll"><table>
+<thead><tr><th>유형</th><th>기준</th></tr></thead>
+<tbody>
+<tr><td>🛡 <b>안정형</b></td><td>적중 확률이 가장 높은 조합</td></tr>
+<tr><td>💎 <b>가치형</b></td><td>기대값 하한이 가장 높은 조합</td></tr>
+<tr><td>⚖ <b>균형형</b></td><td>둘의 절충</td></tr>
+</tbody></table></div>
+<div class="card warn">
+<p style="margin:0"><b>조합은 마진이 곱해진다.</b> EV −2%짜리 둘을 묶으면 약 −4%가 된다.
+조합 배당이 커 보여도 기대값은 더 나빠진다는 뜻이다. 카드에 항상 <b>조합 기대값</b>을 같이 표시하니 그걸 봐라.</p>
+</div>
+<p>베트맨 규칙상 <b>같은 경기의 서로 다른 유형끼리는 묶을 수 없어서</b>, 조합기도 경기당 1픽만 쓴다.</p>
+
+<h2 id="score"><span class="n">11</span>성적표</h2>
+<p>지난 회차 예측이 실제 결과와 얼마나 맞았는지 <b>자동으로</b> 채점된다. 아무도 손으로 적지 않는다.</p>
+<ul>
+  <li><b>앱 예상 적중 vs 실제 적중</b> — 두 숫자가 가까울수록 확률 추정이 건강하다</li>
+  <li><b>보정 오차(ECE)</b> — 낮을수록 좋다. 0.05 아래면 양호</li>
+  <li><b>등급별 실제 ROI</b> — 🟢추천 픽들이 정말 벌었는지</li>
+  <li><b>확률 보정</b> — “70%”라 한 픽이 실제로 몇 % 맞았는지</li>
+  <li><b>앱 vs 자체 모델</b> — 해외 컨센서스와 모델 중 누가 더 맞았는지</li>
+</ul>
+<p><b>표본이 200픽은 넘어야</b> 방향이라도 보인다. 그전 숫자는 운이다.</p>
+
+<h2 id="why"><span class="n">12</span>왜 믿을 만한가</h2>
+<p>이 앱의 계산은 실제 경기로 검증했다. <b>방법론 · 검증</b> 탭에 전부 있다.</p>
+<div class="card">
+<div class="kv"><span>학습에 쓴 실경기</span><b>10,880경기 (5대 리그, 2020–2026)</b></div>
+<div class="kv"><span>검증 방식</span><b>walk-forward — 미래를 안 본 상태로 예측</b></div>
+<div class="kv"><span>검증 경기</span><b>5,238경기</b></div>
+<div class="kv"><span>확률 보정(ECE)</span><b>0.0113 — 매우 양호</b></div>
+</div>
+<h3>가장 중요한 검증 결과</h3>
+<p>자체 모델은 <b>해외 시장 배당을 이기지 못했다.</b> 두 확률을 섞어봤을 때 최적 비율은
+<b>해외 시장 100%</b>였다. 그래서 이 앱은 <b>해외 컨센서스를 주력으로 쓰고</b>,
+모델은 (1) 해외 배당이 없을 때의 임시값, (2) 핸디캡·언더오버를 모순 없이 뽑아내는 도구로만 쓴다.</p>
+<p>이게 <span class="badge b-bad">모델 단독 · 등급 없음</span> 배지가 있는 이유다 —
+모델 확률만 믿고 걸면 <b>ROI −12%</b>였다.</p>
+
+<h2 id="myth"><span class="n">13</span>흔한 오해</h2>
+
+<h3>“🟡 관심이면 걸어도 되는 거 아냐?”</h3>
+<p>아니다. 관심은 <b>“양수처럼 보이는데 확실하지 않다”</b>는 뜻이다.
+EV +1.6%짜리는 통계적으로 이익이라고 말할 수 없다. <b>+5% 이상</b>부터가 실전 기준이다.</p>
+
+<h3>“배당 높은 걸 걸면 한 번만 터져도 되잖아”</h3>
+<p>데이터가 정반대를 말한다. 배당 8.00–12.00 구간은 1,192픽 중 <b>104번만 적중</b>했고 ROI는 <b>−18.2%</b>다.
+역배로 갈수록 마진이 기하급수적으로 무거워진다.</p>
+
+<h3>“조합하면 배당이 커지니 이득 아냐?”</h3>
+<p>배당이 커지는 만큼 확률이 줄고, <b>마진은 곱해진다</b>. 기대값은 반드시 나빠진다.</p>
+
+<h3>“이번 회차에 🟢추천이 하나도 없는데 고장난 거 아냐?”</h3>
+<p>정상이다. 가치 픽은 <b>10경기에 1개도 안 나온다</b>. 없다고 말해주는 게 이 앱의 핵심 기능이다.</p>
+
+<h3>“앱이 추천했는데 틀렸잖아”</h3>
+<p>EV +5%짜리 픽도 <b>절반 가까이는 진다</b>. 확률 도구지 예언 도구가 아니다.
+한 판이 아니라 <b>수십 판의 평균</b>으로 판단해야 하고, 그래서 성적표가 있다.</p>
+
+<hr>
+
+<div class="card bad">
+<p style="margin:0 0 8px"><b>마지막으로.</b></p>
+<p style="margin:0">이 앱은 <b>정보 도구</b>다. 수익을 보장하지 않고, 대부분의 회차에서
+“걸 만한 게 없다”고 말할 것이다. 그 말을 따르는 게 이 도구를 제대로 쓰는 법이다.<br><br>
+도박 문제로 어려움이 있다면 <b>한국도박문제예방치유원 1336</b> (24시간, 무료).</p>
+</div>
+
+<footer>
+  <p style="margin:0">토토스캐너 사용 설명서 · 데이터 출처: football-data.co.uk (5대 리그 10,880경기), betman.co.kr<br>
+  숫자는 모두 실제 경기로 계산했다. 자세한 검증 결과는 앱의 <b>방법론 · 검증</b> 탭에 있다.</p>
+</footer>
+
+</main>

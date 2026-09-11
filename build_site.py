@@ -30,6 +30,14 @@ def build():
     out = HEAD + head_bits + '<script src="config.js"></script>\n</head>\n<body>\n' + body + "\n</body>\n</html>\n"
     open(os.path.join(DOCS, "index.html"), "w", encoding="utf-8").write(out)
 
+    # 사용 설명서 (로그인 없이 볼 수 있다 — 데이터가 없는 문서라서)
+    gsrc = os.path.join(HERE, "guide_src.html")
+    if os.path.exists(gsrc):
+        g = open(gsrc, encoding="utf-8").read()
+        i2 = g.index("<style>")
+        open(os.path.join(DOCS, "guide.html"), "w", encoding="utf-8").write(
+            HEAD + g[:i2] + "</head>\n<body>\n" + g[i2:] + "\n</body>\n</html>\n")
+
     # 검색엔진 차단 (URL 을 모르는 사람이 흘러들어오지 않게)
     open(os.path.join(DOCS, "robots.txt"), "w").write("User-agent: *\nDisallow: /\n")
     open(os.path.join(DOCS, ".nojekyll"), "w").write("")
