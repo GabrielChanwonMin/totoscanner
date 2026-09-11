@@ -69,6 +69,25 @@ def push():
 
     pub = [m for m in app["matches"] if all(x > 1 for x in m.get("betman", []))]
     print(f"  ✓ {app.get('round')}회차 {len(app['matches'])}행 올렸다 (배당 공시 {len(pub)}행)")
+
+    # 자동 채점 성적표도 같이 올린다 (앱의 '성적표' 탭이 읽는다)
+    sbp = os.path.join(os.path.dirname(HERE), "engine", "scoreboard.json")
+    if os.path.exists(sbp):
+        sb = json.load(open(sbp, encoding="utf-8"))
+        row2 = {"id": "scoreboard", "captured_at": sb.get("builtAt"),
+                "payload": sb, "updated_at": sb.get("builtAt")}
+        req2 = urllib.request.Request(url + "/rest/v1/rounds",
+                                      data=json.dumps([row2]).encode(), method="POST")
+        for k, v in {"apikey": key, "Authorization": "Bearer " + key,
+                     "Content-Type": "application/json",
+                     "Prefer": "resolution=merge-duplicates,return=minimal"}.items():
+            req2.add_header(k, v)
+        try:
+            with urllib.request.urlopen(req2, timeout=30) as r:
+                r.read()
+            print(f"  ✓ 성적표도 올렸다 ({sb.get('settled', 0)}픽 채점됨)")
+        except Exception as e:
+            print(f"  성적표 올리기 실패: {e}")
     return True
 
 

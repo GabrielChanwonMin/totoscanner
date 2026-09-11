@@ -32,7 +32,16 @@ d = [lg(dc.devig_power(r["close"])[i]) - lg(dc.devig_power(r["open"])[i]) for r 
 sd_move = statistics.pstdev(d)
 dm = [lg(r["pm"][i]) - lg(dc.devig_power(r["close"])[i]) for r in R for i in range(3)]
 sd_model = statistics.pstdev(dm)
-out["uncertainty"] = {"sdLogitMarketMove": round(sd_move, 4), "sdLogitModelVsMarket": round(sd_model, 4)}
+out["uncertainty"] = {
+  "sdLogitMarketMove": round(sd_move, 4), "sdLogitModelVsMarket": round(sd_model, 4),
+  # 파생 마켓(승무패 컨센서스에서 뽑아낸 핸디·언오버·SUM) 실측 보정.
+  # 1,814경기로 측정 — 자세한 근거는 앱 방법론 탭 '파생 마켓 검증'.
+  "derivedSd":   {"HANDICAP": 0.08, "OU": 0.19, "SUM": 0.12},
+  "derivedBias": {"OU": 0.087, "SUM": -0.052},
+  "derivedCheck": {"n": 1814,
+    "handi": {"pred": [0.24, 0.198, 0.562], "act": [0.235, 0.198, 0.567], "ece": 0.0126},
+    "ou":    {"ll": 0.67583, "llMarket": 0.67578, "sd": 0.1908},
+    "sum":   {"pred": 0.486, "act": 0.473, "ece": 0.0135}}}
 print("\n로짓 이동 표준편차: 시장 오프닝→클로징 %.3f | 모델 vs 시장 %.3f" % (sd_move, sd_model))
 
 out["backtest"] = {

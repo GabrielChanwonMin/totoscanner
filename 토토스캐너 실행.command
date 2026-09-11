@@ -8,16 +8,22 @@ printf '\033[1m토토스캐너\033[0m — 지금 배당을 받아온다\n'
 printf '─────────────────────────────────────────\n\n'
 
 cd collector || exit 1
-printf '\033[1m[1/4]\033[0m 베트맨 회차·배당\n'
+printf '\033[1m[1/5]\033[0m 베트맨 회차·배당\n'
 if ! /usr/bin/python3 collect_betman.py "$@"; then
   printf '\n\033[33m베트맨 수집 실패.\033[0m 회차가 발매 전이거나 일시적 오류다.\n'
   printf '  회차를 직접 찍으려면: python3 collect_betman.py 260109\n'
 fi
 
-printf '\n\033[1m[2/4]\033[0m 해외 컨센서스 배당\n'
+printf '\n\033[1m[2/5]\033[0m 해외 컨센서스 배당\n'
 /usr/bin/python3 collect_odds.py
 
-printf '\n\033[1m[3/4]\033[0m 회차 데이터 올리기\n'
+printf '\n\033[1m[3/5]\033[0m 이번 회차 예측 기록\n'
+(cd collector && /usr/bin/python3 predict_round.py)
+
+printf '\n\033[1m[4/5]\033[0m 지난 회차 자동 채점\n'
+(cd collector && /usr/bin/python3 settle.py)
+
+printf '\n\033[1m[5/5]\033[0m 회차 데이터 올리기\n'
 cd "$ROOT" || exit 1
 PUSHED=0
 if [ -f collector/secrets.json ]; then
@@ -34,7 +40,7 @@ if [ "$PUSHED" = "0" ]; then
   fi
 fi
 
-printf '\n\033[1m[4/4]\033[0m 사이트 열기\n'
+printf '\n\033[1m사이트 열기\033[0m\n'
 REMOTE=$(git remote get-url origin 2>/dev/null)
 if [ -n "$REMOTE" ]; then
   # 앱 코드가 바뀐 경우에만 푸시한다 (회차 데이터는 Supabase 로 갔다)

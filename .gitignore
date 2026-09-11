@@ -3,6 +3,8 @@ collector/snapshots/
 collector/logs/
 collector/latest_import.json
 collector/secrets.json
+engine/scoreboard.json
+collector/predictions/
 docs/data/latest.json
 /data/
 __pycache__/
