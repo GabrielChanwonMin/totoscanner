@@ -11,7 +11,7 @@ football-data 의 fixtures.csv 는 그쪽이 올려줄 때까지 기다려야 �
 키는 collector/secrets.json 의 "oddsApiKey" 에 넣는다 (the-odds-api.com 무료 가입).
 무료 500회/월 · 5대 리그 한 번 갱신에 5회 소모.
 """
-import json, os, re, sys, urllib.request, urllib.error, datetime as dt
+import json, os, re, sys, unicodedata, urllib.request, urllib.error, datetime as dt
 from collections import Counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -32,8 +32,15 @@ ABBR = {"ath": "atletico athletic", "sg": "saintgermain", "nott m": "nottingham"
         "m gladbach": "monchengladbach", "rb": "rasenballsport"}
 
 
+def _deaccent(s):
+    """Atlético → Atletico, Coruña → Coruna, Mönchengladbach → Monchengladbach.
+    API 는 악센트를 쓰고 football-data 는 안 쓴다."""
+    return "".join(c for c in unicodedata.normalize("NFKD", s or "")
+                   if not unicodedata.combining(c))
+
+
 def _tok(s):
-    s = (s or "").lower()
+    s = _deaccent(s).lower()
     s = s.replace("'", " ").replace("-", " ").replace(".", " ")
     s = re.sub(r"[^a-z\s]", " ", s)
     s = re.sub(r"\s+", " ", s).strip()
@@ -85,9 +92,11 @@ def league_teams(lg):
 
 def match_team(api_name, lg, alias):
     """→ (우리이름, 점수). 확실하지 않으면 (None, 점수)."""
-    k = lg + "|" + api_name
-    if k in alias:
-        return alias[k], 1.0
+    if lg + "|" + api_name in alias:
+        return alias[lg + "|" + api_name], 1.0
+    flat = _deaccent(api_name)
+    if lg + "|" + flat in alias:                      # 사전은 악센트 없이 적어둔다
+        return alias[lg + "|" + flat], 1.0
     cands = league_teams(lg)
     if not cands:
         return None, 0.0
@@ -193,10 +202,13 @@ def main():
             h, a = ev.get("home_team"), ev.get("away_team")
             if not h or not a:
                 continue
-            kh = alias.get(lg + "|" + h) or h
-            ka = alias.get(lg + "|" + a) or a
-            k = (lg, norm(kh), norm(ka))
-            rows = idx.get(k)
+            # 점수 기반 매처를 쓴다 (사전 → 악센트 무시 → 점수). 단순 이름 비교로는
+            # "Real Racing Club de Santander" 같은 정식명이 안 붙는다.
+            mh, _ = match_team(h, lg, alias)
+            ma, _ = match_team(a, lg, alias)
+            if not mh or not ma:
+                continue
+            rows = idx.get((lg, norm(mh), norm(ma)))
             if not rows:
                 continue
             h2h, nbk = consensus(ev, "h2h")
