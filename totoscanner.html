@@ -2056,6 +2056,77 @@ function renderSelfCalib(done){
    이건 "이 경기가 어떤 경기인가"를 읽기 위한 정보다. */
 function styleOf(lg, team){ return (STYLES.teams||{})[lg+'|'+team] || null; }
 
+/* 전술 성향 도식 — 모든 요소가 실측 수치에서 나온다.
+   선수 11명을 찍지 않는 이유: 라인업 데이터가 없어서 찍으면 지어내는 게 된다. */
+function pitchSVG(p, la, name, flip){
+  if(!p || !la) return '';
+  const r=(k)=> (p[k]!=null && la[k]) ? p[k]/la[k] : 1;
+  const clamp2=(x,a,b)=>x<a?a:x>b?b:x;
+  // 측면 지향 = 코너/슈팅 비율이 리그 대비 얼마나 높은가
+  const wideRaw = (p.corners!=null&&p.shots) ? (p.corners/p.shots) : null;
+  const laWide  = (la.corners&&la.shots) ? (la.corners/la.shots) : null;
+  const wide = (wideRaw&&laWide) ? clamp2(wideRaw/laWide, .6, 1.5) : 1;
+  const vol  = clamp2(r('shots'), .6, 1.6);        // 공격 물량
+  const qual = clamp2(r('sotPct'), .7, 1.4);       // 슈팅 질
+  const back = clamp2(r('shotsA'), .6, 1.6);       // 많이 맞을수록 밀려 선다
+
+  const W=300,H=190, M=10;
+  const pitch='var(--surface2)', line='var(--line)';
+  // 수비 라인 높이: 적게 맞을수록 높게 올라간다
+  const dl = M + (H-2*M) * clamp2(0.30 + (back-1)*0.35, .12, .62);
+  const wideW = 46*wide, cw = 60/wide;
+  const aw = 4 + 10*(vol-0.6)/1.0;                 // 화살표 굵기
+  const dir = flip? -1 : 1;
+  const cx = W/2;
+  const goalY = flip? H-M : M;                      // 공격 방향
+  const arrow=(x0,x1)=>{
+    // 자기 진영에서 시작해 상대 골문 앞에서 멈춘다 (경기장 안에 머물러야 한다)
+    const y0 = flip ? M+20 : H-M-20;
+    const y1 = flip ? H-M-10 : M+10;
+    return '<line x1="'+x0+'" y1="'+y0+'" x2="'+x1+'" y2="'+y1+'" stroke="var(--accent)" '+
+           'stroke-width="'+aw.toFixed(1)+'" stroke-linecap="round" opacity="'+(0.35+0.4*qual/1.4).toFixed(2)+'"/>'+
+           '<circle cx="'+x1+'" cy="'+y1+'" r="'+(aw/1.6).toFixed(1)+'" fill="var(--accent)" opacity="0.8"/>';
+  };
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="'+name+' 공격 성향 도식">'+
+    '<rect x="'+M+'" y="'+M+'" width="'+(W-2*M)+'" height="'+(H-2*M)+'" rx="4" fill="'+pitch+'" stroke="'+line+'"/>'+
+    '<line x1="'+M+'" y1="'+(H/2)+'" x2="'+(W-M)+'" y2="'+(H/2)+'" stroke="'+line+'"/>'+
+    '<circle cx="'+cx+'" cy="'+(H/2)+'" r="22" fill="none" stroke="'+line+'"/>'+
+    // 좌·우 측면 채널 (진하기 = 측면 지향)
+    '<rect x="'+M+'" y="'+M+'" width="'+wideW+'" height="'+(H-2*M)+'" fill="var(--accent)" opacity="'+(0.05+0.13*(wide-0.6)).toFixed(3)+'"/>'+
+    '<rect x="'+(W-M-wideW)+'" y="'+M+'" width="'+wideW+'" height="'+(H-2*M)+'" fill="var(--accent)" opacity="'+(0.05+0.13*(wide-0.6)).toFixed(3)+'"/>'+
+    '<rect x="'+(cx-cw/2)+'" y="'+M+'" width="'+cw+'" height="'+(H-2*M)+'" fill="var(--accent)" opacity="'+(0.16-0.09*(wide-0.6)).toFixed(3)+'"/>'+
+    // 수비 라인
+    '<line x1="'+M+'" y1="'+(flip? H-dl : dl)+'" x2="'+(W-M)+'" y2="'+(flip? H-dl : dl)+'" '+
+      'stroke="var(--muted)" stroke-width="2" stroke-dasharray="6 4"/>'+
+    '<text x="'+(M+5)+'" y="'+((flip? H-dl : dl)-5)+'" fill="var(--faint)" font-size="9" '+
+      'font-family="var(--mono)">수비 라인</text>'+
+    // 공격 화살표 (측면 지향이면 바깥쪽으로 벌어진다)
+    arrow(cx-(10+34*wide), cx-(4+18*wide))+
+    arrow(cx, cx)+
+    arrow(cx+(10+34*wide), cx+(4+18*wide))+
+    // 골문 표시 — 화살표가 향하는 쪽. 글씨는 구석으로 빼서 화살표와 겹치지 않게.
+    '<rect x="'+(cx-26)+'" y="'+(flip? H-M-3 : M)+'" width="52" height="3" fill="var(--accent)" opacity="0.55"/>'+
+    '<text x="'+(W-M-4)+'" y="'+(flip? H-M-7 : M+13)+'" fill="var(--faint)" font-size="8.5" '+
+      'font-family="var(--mono)" text-anchor="end">공격 방향 '+(flip?'↓':'↑')+'</text>'+
+    '</svg>';
+}
+
+/* 도식 옆에 붙는 한 줄 설명 */
+function styleWords(p, la){
+  if(!p||!la) return '';
+  if(p.thin) return '리그 경기가 '+p.n+'개뿐이라 성향을 말하기 이르다.';
+  const w=[];
+  const wideR=(p.corners&&p.shots&&la.corners&&la.shots)? (p.corners/p.shots)/(la.corners/la.shots) : 1;
+  w.push(wideR>1.12? '측면을 많이 쓴다' : wideR<0.9? '중앙 위주로 공격한다' : '측면·중앙이 고른 편');
+  if(la.shots){ const v=p.shots/la.shots;
+    w.push(v>1.15? '슈팅 물량이 많다' : v<0.85? '슈팅이 적다' : '슈팅 물량은 평균권'); }
+  if(la.sotPct&&p.sotPct){ const q=p.sotPct/la.sotPct;
+    if(q>1.1) w.push('슈팅 질이 좋다'); else if(q<0.9) w.push('결정적인 슈팅이 적다'); }
+  if(la.shotsA&&p.shotsA){ const b=p.shotsA/la.shotsA;
+    w.push(b>1.15? '수비에서 많이 내준다' : b<0.85? '수비가 단단하다' : ''); }
+  return w.filter(Boolean).join(' · ') + '.';
+}
+
 function renderAnalysis(G){
   const A=styleOf(G.league,G.home), B=styleOf(G.league,G.away);
   const la=(STYLES.leagueAvg||{})[G.league];
@@ -2112,6 +2183,19 @@ function renderAnalysis(G){
         (A.finishing!=null?(A.finishing>0?'+':'')+A.finishing.toFixed(2):'—')+'</td><td>'+
         (B.finishing!=null?(B.finishing>0?'+':'')+B.finishing.toFixed(2):'—')+'</td><td>—</td></tr>' : '')+
       '</tbody></table></div>'+
+    '<hr><div class="lbl" style="margin-bottom:8px">공격 성향 — 아래 수치에서 그린 도식이다</div>'+
+    '<div class="grid g2" style="gap:14px">'+
+      '<div><div style="font-weight:600;font-size:13px;margin-bottom:5px">'+hk+'</div>'+
+        pitchSVG(A,la,hk,false)+
+        '<p class="note" style="margin:6px 0 0;font-size:11.5px">'+styleWords(A,la)+'</p></div>'+
+      '<div><div style="font-weight:600;font-size:13px;margin-bottom:5px">'+ak+'</div>'+
+        pitchSVG(B,la,ak,true)+
+        '<p class="note" style="margin:6px 0 0;font-size:11.5px">'+styleWords(B,la)+'</p></div>'+
+    '</div>'+
+    '<p class="note" style="margin:8px 0 0;font-size:11.5px">'+
+      '진한 세로 띠 = 공격이 자주 지나는 통로(코너/슈팅 비율에서). '+
+      '화살표 굵기 = 슈팅 물량. 점선 = 수비 라인 높이(허용 슈팅에서). '+
+      '<b>선수 위치가 아니라 팀 성향이다.</b></p>'+
     '<div class="grid g2" style="margin-top:14px;gap:14px">'+
       '<div><div class="lbl" style="margin-bottom:5px">'+hk+' 최근</div>'+
         formBadge(A.form)+'<div style="margin-top:7px">'+recent(A)+'</div></div>'+
