@@ -141,6 +141,7 @@ a{color:var(--accent-ink)}
     <li><a href="#numbers">숫자 읽는 법</a></li>
     <li><a href="#badge">배지 사전</a></li>
     <li><a href="#risk">위험 요소</a></li>
+    <li><a href="#analysis">경기 분석</a></li>
     <li><a href="#team">팀 · 맞대결 기록</a></li>
     <li><a href="#bucket">배당 구간별 적중/실패</a></li>
     <li><a href="#combo">조합 추천</a></li>
@@ -299,7 +300,31 @@ EV = 1,016 / 1,000 − 1 = +1.6%</div>
 다만 <b>⚡지연 배당</b>이 그 역할을 어느 정도 대신한다 — 주전이 빠지면 해외 시장이 먼저 움직이기 때문이다.</p>
 </div>
 
-<h2 id="team"><span class="n">8</span>팀 · 맞대결 기록</h2>
+<h2 id="analysis"><span class="n">8</span>경기 분석</h2>
+<p>경기를 누르면 아래에 <b>경기 분석</b> 카드가 나온다. 실제 경기 기록으로 계산한 두 팀의 플레이 스타일이다.</p>
+<div class="scroll"><table>
+<thead><tr><th>지표</th><th>무엇을 말해주나</th></tr></thead>
+<tbody>
+<tr><td>슈팅 / 허용 슈팅</td><td>공격 물량과 수비 부담</td></tr>
+<tr><td>유효슈팅률</td><td>슈팅의 질. 많이 쏘는데 낮으면 난사형이다</td></tr>
+<tr><td>코너</td><td>측면·세트피스 상황을 얼마나 만드나</td></tr>
+<tr><td>파울 · 카드</td><td>거친 정도. 프리킥을 자주 내주는지</td></tr>
+<tr><td>기대득점 xG</td><td>만들어낸 기회의 질 (이번 시즌만)</td></tr>
+<tr><td>결정력</td><td>xG 대비 실제로 얼마나 더 넣나</td></tr>
+</tbody></table></div>
+<p><span style="color:var(--good)">▲</span> <span style="color:var(--bad)">▼</span> 는 리그 평균 대비다.
+승격팀처럼 <b>경기 표본이 적으면 화살표를 달지 않는다</b>. 아래에 최근 6경기 결과도 붙는다.</p>
+<div class="card warn">
+<p style="margin:0"><b>이 숫자는 예측에 쓰지 않는다.</b> 검증 결과 시장 배당이 더 정확해서,
+등급과 EV는 전적으로 배당 비교로 계산한다. 경기 분석은 <b>"이게 어떤 경기인가"를 읽기 위한 정보</b>다.</p>
+</div>
+<div class="card bad">
+<p style="margin:0"><b>예상 라인업과 부상자 명단은 없다.</b> 유료 데이터가 있어야 하고,
+없는 걸 지어내지는 않는다. 주전 결장은 보통 해외 시장이 먼저 반영하므로
+<span class="badge b-flag">⚡ 지연 배당</span> 표시가 그 신호를 대신한다.</p>
+</div>
+
+<h2 id="team"><span class="n">9</span>팀 · 맞대결 기록</h2>
 <p>실제 경기 <b>10,880건</b>에서 뽑은 기록이다.</p>
 <div class="scroll"><table>
 <thead><tr><th></th><th class="n">승무패</th><th class="n">시장 예상</th><th class="n">실제</th><th class="n">정배 적중</th><th class="n">역배 적중</th></tr></thead>
