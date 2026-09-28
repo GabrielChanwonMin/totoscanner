@@ -19,6 +19,28 @@ def main():
     pub = [m for m in app.get("matches", []) if m.get("betman") and all(float(x) > 1 for x in m["betman"])]
     if not pub:
         print("  배당 공시 전이라 예측할 게 없다."); return 0
+
+    # 킥오프가 지난 경기는 뺀다. 배당을 받은 시각보다 먼저 시작한 경기를 기록하면
+    # '결과를 보고 쓴 예측'이 성적표에 섞인다 — 그러면 성적표 전체를 못 믿는다.
+    try:
+        cap = dt.datetime.fromisoformat((app.get("capturedAt") or "")[:19])
+    except ValueError:
+        cap = dt.datetime.now()
+    late, kept = [], []
+    for m in pub:
+        k = (m.get("kick") or "")[:16]
+        try:
+            started = bool(k) and dt.datetime.fromisoformat(k) <= cap
+        except ValueError:
+            started = False
+        (late if started else kept).append(m)
+    if late:
+        games = {(m["home"], m["away"]) for m in late}
+        print("  이미 시작한 경기 %d개는 뺐다 (배당 수집 %s 기준)"
+              % (len(games), cap.strftime("%m-%d %H:%M")))
+    if not kept:
+        print("  남는 경기가 없다 — 이 회차는 기록하지 않는다."); return 0
+    pub = kept
     rows = P.predict_round({"matches": pub})
     if not rows:
         print("  예측이 나오지 않았다 (팀 레이팅 확인)."); return 1
