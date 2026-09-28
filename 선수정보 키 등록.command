@@ -20,16 +20,26 @@ if [ "$CODE" != "200" ]; then
   printf '%s\n' "$(printf '%s' "$BODY" | head -c 200)"
   exit 1
 fi
-printf '%s' "$BODY" | /usr/bin/python3 - <<'PY'
+# 본문은 인자로 넘긴다. 파이프로 주면 heredoc(프로그램)과 stdin 이 겹쳐서 터진다.
+if ! /usr/bin/python3 - "$BODY" <<'PY'
 import json, sys
-d = json.load(sys.stdin).get("response") or {}
+try:
+    raw = json.loads(sys.argv[1])
+except Exception:
+    print("\033[31m  응답을 읽지 못했다 — 키를 다시 확인해라\033[0m"); sys.exit(1)
+errs = raw.get("errors")
+if isinstance(errs, dict) and errs:
+    print("\033[31m  " + "; ".join("%s: %s" % kv for kv in errs.items()) + "\033[0m"); sys.exit(1)
+d = raw.get("response") or {}
 if not d:
     print("\033[31m  응답이 비었다 — 키를 다시 확인해라\033[0m"); sys.exit(1)
 sub = d.get("subscription") or {}; req = d.get("requests") or {}
-print("\033[32m  ✓ 키가 통한다 — 요금제 %s, 오늘 %s/%s 사용\033[0m"
+print("\033[32m  \u2713 키가 통한다 — 요금제 %s, 오늘 %s/%s 사용\033[0m"
       % (sub.get("plan"), req.get("current"), req.get("limit_day")))
 PY
-[ $? -ne 0 ] && exit 1
+then
+  exit 1
+fi
 
 if [ ! -f secrets.json ]; then
   printf '\n\033[31msecrets.json 이 없다.\033[0m 먼저 "Supabase 연결.command" 를 실행해라.\n'; exit 1
