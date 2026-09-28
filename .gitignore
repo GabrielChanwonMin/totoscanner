@@ -10,3 +10,4 @@ docs/data/latest.json
 __pycache__/
 .DS_Store
 .preview/
+collector/squad_cache/

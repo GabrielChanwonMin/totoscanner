@@ -2139,6 +2139,145 @@ function styleWords(p, la){
   return w.filter(Boolean).join(' · ') + '.';
 }
 
+/* ═══════════ 예상 라인업 · 부상 (API-Football) ═══════════
+   squads.json 이 없으면 이 구역 전체가 조용히 사라진다. 있는 것만 보여준다. */
+let SQUADS = null;
+function esc(x){ return String(x==null?'':x)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+async function loadSquads(){
+  try{
+    const r = await fetch('data/squads.json?t='+Math.floor(Date.now()/36e5), {cache:'default'});
+    if(!r.ok) return;
+    const d = await r.json();
+    if(d && d.teams) { SQUADS = d; if(typeof renderDetail==='function' && ST && ST.sel) renderDetail(); }
+  }catch(e){ /* 없으면 없는 대로 간다 */ }
+}
+function squadOf(lg, team){ return SQUADS && SQUADS.teams ? SQUADS.teams[lg+'|'+team] : null; }
+/* 사진 주소는 틀 + 선수번호로 되살린다 (파일 크기 때문에 틀만 저장한다) */
+function photoOf(p){
+  if(p && p.ph) return p.ph;
+  const f = SQUADS && SQUADS.phFmt;
+  return (f && p && p.id!=null) ? f[0]+p.id+f[1] : null;
+}
+
+/* 상대를 그 팀 기준 우세/대등/열세 중 어디로 볼지 */
+function tierFor(me, opp){
+  if(!me || !opp || !me.cuts || opp.str==null) return 'all';
+  return opp.str >= me.cuts[1] ? 'strong' : (opp.str <= me.cuts[0] ? 'weak' : 'even');
+}
+const TIERKO = {strong:'강팀 상대', even:'비슷한 팀 상대', weak:'약팀 상대', all:'전체 평균'};
+
+function pickForm(me, opp){
+  if(!me || !me.form) return null;
+  const t = tierFor(me, opp);
+  return me.form[t] ? {tier:t, ...me.form[t]} : (me.form.all ? {tier:'all', ...me.form.all} : null);
+}
+
+function shortName(n){
+  const t = String(n||'').trim().split(/\s+/);
+  return t.length>1 ? t[t.length-1] : (t[0]||'');
+}
+
+/* 예상 선발 그림 — grid('행:열')를 그대로 좌표로 쓴다 */
+function lineupPitch(team, F, flip){
+  if(!F || !F.xi || !F.xi.length) return '';
+  const by = {}; // id → 선수
+  (team.sq||[]).forEach(p=>{ by[p.id]=p; });
+  const rows = {};
+  F.xi.forEach(x=>{
+    const g = String(x.g||'1:1').split(':');
+    const r = +g[0]||1, col = +g[1]||1;
+    // col 로 따로 둔다 — x.c 는 '그 자리 출전 비중'이라 덮어쓰면 안 된다
+    (rows[r] = rows[r] || []).push({...x, col});
+  });
+  const rk = Object.keys(rows).map(Number).sort((a,b)=>a-b);
+  const R = Math.max(rk.length, 1);
+  let dots = '';
+  rk.forEach((r, ri)=>{
+    const line = rows[r].sort((a,b)=>a.col-b.col), C = line.length;
+    line.forEach((x, ci)=>{
+      const p = by[x.id] || {};
+      // ri=0 이 골키퍼. flip 이면 위쪽이 자기 골문이다.
+      // 위아래만 뒤집는다. 홈은 위로, 원정은 아래로 공격한다.
+      // 가장자리에 여백을 둬야 5명 줄에서 이름표가 경기장 밖으로 안 삐져나간다.
+      const yy = 6 + (ri+0.5)/R*88, y = flip ? yy : 100-yy;
+      const x2 = 8 + (ci+0.5)/C*84;
+      const nm = shortName(p.n) || '?'; let ph;
+      const dim = (x.c!=null && x.c<0.45 ? ' lu-soft' : '') + (C>=5 ? ' lu-tight' : '');
+      dots += '<div class="lup'+dim+'" style="left:'+x2.toFixed(1)+'%;top:'+y.toFixed(1)+'%">'+
+        ((ph=photoOf(p)) ? '<img loading="lazy" src="'+esc(ph)+'" alt="" '+
+          'onerror="this.replaceWith(Object.assign(document.createElement(\'i\'),'+
+          '{className:\'lu-noimg\',textContent:'+JSON.stringify(nm.slice(0,2))+'}))">'
+         : '<i class="lu-noimg">'+esc(nm.slice(0,2))+'</i>')+
+        '<b>'+esc(nm)+'</b></div>';
+    });
+  });
+  return '<div class="lupitch"><div class="lu-mid"></div>'+dots+'</div>';
+}
+
+/* 1~4선 인원 대비 — 데이터로 말할 수 있는 선까지만 */
+function lineMatchup(hk, ak, FH, FA){
+  if(!FH || !FA) return '';
+  const count = F => {
+    const r = {}; F.xi.forEach(x=>{ const k=+String(x.g||'1:1').split(':')[0]||1; r[k]=(r[k]||0)+1; });
+    const ks = Object.keys(r).map(Number).sort((a,b)=>a-b);
+    // 1선=GK 제외, 남은 줄을 수비/중원/공격으로 본다
+    const back = ks.slice(1), n = back.map(k=>r[k]);
+    if(n.length<2) return null;
+    return {def:n[0], mid:n.slice(1,-1).reduce((a,b)=>a+b,0)||0, att:n[n.length-1]};
+  };
+  const H = count(FH), A = count(FA);
+  if(!H || !A) return '';
+  const say = [];
+  const cmp = (hn, an, whoH, whoA, label)=>{
+    if(hn===an) return label+' '+hn+' ↔ '+an+' — 수적으로 대등하다';
+    const d = Math.abs(hn-an);
+    return label+' '+hn+' ↔ '+an+' — '+(hn>an?whoH:whoA)+'가 '+d+'명 많다';
+  };
+  say.push(cmp(H.att, A.def, hk, ak, hk+' 공격 vs '+ak+' 수비'));
+  say.push(cmp(A.att, H.def, ak, hk, ak+' 공격 vs '+hk+' 수비'));
+  say.push(cmp(H.mid, A.mid, hk, ak, '중원'));
+  const mid = H.mid - A.mid;
+  if(Math.abs(mid)>=2) say.push('중원 숫자가 '+Math.abs(mid)+'명 차이다 — '+(mid>0?hk:ak)+
+    '가 중앙에서 공을 오래 잡을 가능성이 크다');
+  return '<ul class="lulist">'+say.map(t=>'<li>'+t+'</li>').join('')+'</ul>';
+}
+
+function injBlock(team, ko){
+  const inj = (team && team.inj) || [];
+  if(!inj.length) return '<div class="lbl">'+ko+' — 보고된 결장자 없음</div>';
+  return '<div class="lbl" style="margin-bottom:4px">'+ko+' 결장·의심 '+inj.length+'명</div>'+
+    '<div class="injwrap">'+inj.slice(0,12).map(p=>
+      '<span class="injp" title="'+esc((p.r||'')+'')+'">'+esc(shortName(p.n))+
+      '<i>'+esc(p.t==='Missing Fixture'?'결장':'의심')+'</i></span>').join('')+'</div>';
+}
+
+function lineupBlock(G){
+  const HT = squadOf(G.league, G.home), AT = squadOf(G.league, G.away);
+  if(!HT && !AT) return '';
+  const hk = G.homeKo||koTeam(G.league,G.home), ak = G.awayKo||koTeam(G.league,G.away);
+  const FH = pickForm(HT, AT), FA = pickForm(AT, HT);
+  const side = (T, F, ko, flip)=>{
+    if(!T) return '<div><div class="lbl">'+ko+' — 자료 없음</div></div>';
+    if(!F) return '<div><div style="font-weight:600;font-size:13px">'+ko+'</div>'+
+      '<p class="note" style="font-size:11.5px">라인업 이력이 아직 덜 모였다. 실행할수록 채워진다.</p>'+
+      injBlock(T, ko)+'</div>';
+    return '<div><div style="font-weight:600;font-size:13px;margin-bottom:4px">'+ko+
+      ' <span class="lbl">'+esc(F.f||'')+' · '+TIERKO[F.tier]+' '+F.n+'경기</span></div>'+
+      lineupPitch(T, F, flip)+
+      '<div style="margin-top:7px">'+injBlock(T, ko)+'</div></div>';
+  };
+  const asof = SQUADS.injAsof ? '부상 정보 '+SQUADS.injAsof+' 기준' : '';
+  return '<hr><div class="lbl" style="margin-bottom:8px">예상 선발 — '+
+      '두 시즌 라인업 이력에서, 이번 상대와 같은 급을 만났을 때 자주 낸 11명이다</div>'+
+    '<div class="lugrid">'+ side(HT,FH,hk,false) + side(AT,FA,ak,true) +'</div>'+
+    lineMatchup(hk, ak, FH, FA)+
+    '<p class="note" style="margin:8px 0 0;font-size:11.5px">'+
+      '<b>확정 라인업이 아니다.</b> 감독 발표는 보통 킥오프 1시간 전이라 베트맨 마감 뒤에 나온다. '+
+      '여기 있는 건 과거에 같은 급 상대로 자주 낸 조합이고, 결장자로 잡힌 선수는 빼고 다음 순번을 올린다. '+
+      '흐린 선수는 그 자리 출전 비중이 절반 미만이라 특히 덜 확실하다. '+esc(asof)+'</p>';
+}
+
 function renderAnalysis(G){
   const A=styleOf(G.league,G.home), B=styleOf(G.league,G.away);
   const la=(STYLES.leagueAvg||{})[G.league];
@@ -2215,10 +2354,11 @@ function renderAnalysis(G){
         formBadge(B.form)+'<div style="margin-top:7px">'+recent(B)+'</div></div>'+
     '</div>'+
     (notes.length? '<hr><p class="note" style="margin:0">'+notes.map(n=>'· '+n).join('<br>')+'</p>':'')+
-    '<hr><p class="note" style="margin:0"><b>예상 라인업·부상자 정보는 없다.</b> '+
-      '유료 데이터가 있어야 해서 넣지 않았고, 없는 걸 지어내지는 않는다. '+
+    lineupBlock(G)+
+    (SQUADS? '' : '<hr><p class="note" style="margin:0"><b>예상 라인업·부상자 정보는 아직 없다.</b> '+
+      '선수 데이터를 받아오면 여기에 나온다 — 없는 걸 지어내지는 않는다. '+
       '주전 결장은 보통 해외 시장이 먼저 반영하므로 '+
-      '<span class="badge b-flag">⚡ 지연 배당</span> 표시가 그 신호를 대신한다.</p>'+
+      '<span class="badge b-flag">⚡ 지연 배당</span> 표시가 그 신호를 대신한다.</p>')+
     '</div></div>';
 }
 
@@ -2571,6 +2711,7 @@ async function pullRoundSB(){
 
 /* 로그인·승인이 끝난 뒤 실행되는 본 시작 */
 async function boot(){
+  loadSquads();
   await loadPicks(); await loadSlips(); renderLog();
   await pullRoundSB();
   await pullScoreboard();
@@ -2578,6 +2719,32 @@ async function boot(){
 </script>
 <style>
 @media(max-width:760px){ .calibwrap{grid-template-columns:1fr!important} }
+
+/* 예상 선발 그림 */
+.lupitch{position:relative;aspect-ratio:3/4;background:var(--surface2);
+  border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.lupitch .lu-mid{position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line)}
+.lupitch .lu-mid:after{content:'';position:absolute;left:50%;top:50%;width:52px;height:52px;
+  margin:-26px 0 0 -26px;border:1px solid var(--line);border-radius:50%}
+.lup{position:absolute;transform:translate(-50%,-50%);width:20%;text-align:center;line-height:1}
+.lup img,.lup .lu-noimg{display:block;width:62%;margin:0 auto;aspect-ratio:1;border-radius:50%;
+  object-fit:cover;background:var(--surface);border:1.5px solid var(--accent);
+  font-style:normal;font-size:8.5px;line-height:2.5;color:var(--muted)}
+.lup b{display:block;margin-top:2px;font-size:8.5px;font-weight:600;letter-spacing:-.2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lup.lu-tight b{font-size:7.5px;letter-spacing:-.4px}
+.lup.lu-soft{opacity:.5}
+.lup.lu-soft img,.lup.lu-soft .lu-noimg{border-style:dashed}
+.lulist{margin:10px 0 0;padding-left:16px;font-size:12px;color:var(--muted)}
+.lulist li{margin:2px 0}
+.injwrap{display:flex;flex-wrap:wrap;gap:4px}
+.injp{display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:2px 6px;
+  border-radius:4px;background:var(--surface2);border:1px solid var(--line)}
+.injp i{font-style:normal;font-size:9.5px;color:var(--bad)}
+/* 폰에서는 두 팀을 위아래로 — 나란히 놓으면 이름이 다 잘린다 */
+.lugrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:620px){ .lugrid{grid-template-columns:1fr;gap:18px}
+  .lup b{font-size:9.5px} .lup.lu-tight b{font-size:9px} }
 </style>
 
 </body>
