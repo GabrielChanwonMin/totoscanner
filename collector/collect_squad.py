@@ -82,6 +82,7 @@ def sync_teams(cl, seasons):
             except Budget:
                 raise
             except Exception as e:
+                _check_locked(e)
                 print("  팀 목록 %s %s: %s" % (div, season, e))
                 continue
             ids = {}
@@ -157,6 +158,7 @@ def sync_injuries(cl, season):
         except Budget:
             break
         except Exception as e:
+            _check_locked(e)
             print("  부상 %s: %s" % (div, e)); continue
         for row in resp:
             tid = ((row.get("team") or {}).get("id"))
@@ -191,6 +193,7 @@ def sync_fixtures(cl, seasons):
             except Budget:
                 return fx
             except Exception as e:
+                _check_locked(e)
                 print("  경기목록 %s: %s" % (tag, e)); continue
             rows = []
             for r in resp:
@@ -291,6 +294,23 @@ def round_teams(tmap):
     return keys, {tmap[k] for k in keys}
 
 
+class SeasonLocked(Exception):
+    """무료 요금제가 이 시즌을 막았다. 리그마다 똑같이 터지므로 즉시 멈춘다."""
+
+
+def locked_note(e):
+    print("\n  \033[33m이 요금제로는 이번 시즌 선수 자료를 못 받는다.\033[0m")
+    print("  %s" % e)
+    print("  무료 플랜은 2022~2024 시즌까지만 열려 있다. 예상 라인업·부상자는")
+    print("  이번 시즌 자료라야 쓸모가 있어서, 요금제를 올리기 전까지는 이 구역이 안 나온다.")
+    print("  앱의 나머지 기능(배당 비교 · EV · 등급)은 그대로 돈다.")
+
+
+def _check_locked(e):
+    if "do not have access to this season" in str(e):
+        raise SeasonLocked(str(e))
+
+
 def main():
     args = sys.argv[1:]
     daily = AF.DAILY_DEFAULT
@@ -321,7 +341,12 @@ def main():
     tm = AF.cload("teams.json") or {}
     if not build_only:
         print("오늘 남은 호출: %d회" % cl.left)
-        tm = sync_teams(cl, seasons)
+        try:
+            tm = sync_teams(cl, seasons)
+        except SeasonLocked as e:
+            locked_note(e); return 0
+        except Budget:
+            print("  예산 소진 — 다음 실행에서 이어받는다")
     tmap = tm.get("map", {})
     if not tmap:
         print("팀 연결이 아직 없다. 내일 다시 실행하면 이어서 받는다.")
@@ -344,6 +369,8 @@ def main():
             lu = backfill_lineups(cl, fx, want_ids)
             if cl.left > 15:            # 라인업을 다 채우고도 남으면 명단을 새로 고친다
                 squads = sync_squads(cl, tmap, want, stale_ok=True)
+        except SeasonLocked as e:
+            locked_note(e); return 0
         except Budget as e:
             print("  예산 소진: %s — 다음 실행에서 이어받는다" % e)
             squads = AF.cload("player_squads.json") or {}
