@@ -2165,12 +2165,24 @@ function tierFor(me, opp){
   if(!me || !opp || !me.cuts || opp.str==null) return 'all';
   return opp.str >= me.cuts[1] ? 'strong' : (opp.str <= me.cuts[0] ? 'weak' : 'even');
 }
-const TIERKO = {strong:'강팀 상대', even:'비슷한 팀 상대', weak:'약팀 상대', all:'전체 평균'};
+const TIERKO = {strong:'강팀 상대', even:'비슷한 팀 상대', weak:'약팀 상대', all:'전체 평균',
+                mins:'이번 시즌 출전 시간 기준'};
 
 function pickForm(me, opp){
   if(!me || !me.form) return null;
-  const t = tierFor(me, opp);
-  return me.form[t] ? {tier:t, ...me.form[t]} : (me.form.all ? {tier:'all', ...me.form.all} : null);
+  // 상대 급별 > 전체 평균 > 출전시간 기준 순으로 있는 걸 쓴다.
+  // 자료 출처에 따라 있는 칸이 달라서, 하나라도 있으면 그걸로 그린다.
+  const order = [tierFor(me, opp), 'all', 'mins', 'strong', 'even', 'weak'];
+  for(const t of order){ if(t && me.form[t]) return {tier:t, ...me.form[t]}; }
+  const k = Object.keys(me.form)[0];
+  return k ? {tier:k, ...me.form[k]} : null;
+}
+
+/* 받침이 있으면 '이', 없으면 '가'. 한글 음절은 (코드-0xAC00)%28 로 받침을 알 수 있다. */
+function iga(w){
+  const c = String(w||'').trim().slice(-1).charCodeAt(0);
+  if(!(c>=0xAC00 && c<=0xD7A3)) return '가';
+  return ((c-0xAC00)%28) ? '이' : '가';
 }
 
 function shortName(n){
@@ -2231,25 +2243,28 @@ function lineMatchup(hk, ak, FH, FA){
   const say = [];
   const cmp = (hn, an, whoH, whoA, label)=>{
     if(hn===an) return label+' '+hn+' ↔ '+an+' — 수적으로 대등하다';
-    const d = Math.abs(hn-an);
-    return label+' '+hn+' ↔ '+an+' — '+(hn>an?whoH:whoA)+'가 '+d+'명 많다';
+    const d = Math.abs(hn-an), who = hn>an?whoH:whoA;
+    return label+' '+hn+' ↔ '+an+' — '+who+iga(who)+' '+d+'명 많다';
   };
   say.push(cmp(H.att, A.def, hk, ak, hk+' 공격 vs '+ak+' 수비'));
   say.push(cmp(A.att, H.def, ak, hk, ak+' 공격 vs '+hk+' 수비'));
   say.push(cmp(H.mid, A.mid, hk, ak, '중원'));
   const mid = H.mid - A.mid;
-  if(Math.abs(mid)>=2) say.push('중원 숫자가 '+Math.abs(mid)+'명 차이다 — '+(mid>0?hk:ak)+
-    '가 중앙에서 공을 오래 잡을 가능성이 크다');
+  if(Math.abs(mid)>=2){ const w = mid>0?hk:ak;
+    say.push('중원 숫자가 '+Math.abs(mid)+'명 차이다 — '+w+iga(w)+
+      ' 중앙에서 공을 오래 잡을 가능성이 크다'); }
   return '<ul class="lulist">'+say.map(t=>'<li>'+t+'</li>').join('')+'</ul>';
 }
 
 function injBlock(team, ko){
   const inj = (team && team.inj) || [];
   if(!inj.length) return '<div class="lbl">'+ko+' — 보고된 결장자 없음</div>';
-  return '<div class="lbl" style="margin-bottom:4px">'+ko+' 결장·의심 '+inj.length+'명</div>'+
-    '<div class="injwrap">'+inj.slice(0,12).map(p=>
-      '<span class="injp" title="'+esc((p.r||'')+'')+'">'+esc(shortName(p.n))+
-      '<i>'+esc(p.t==='Missing Fixture'?'결장':'의심')+'</i></span>').join('')+'</div>';
+  const kind = t => t==='SUSP' ? '정지' : (t==='Missing Fixture'||t==='INJ' ? '부상' : '의심');
+  return '<div class="lbl" style="margin-bottom:4px">'+ko+' 결장 '+inj.length+'명</div>'+
+    '<div class="injwrap">'+inj.slice(0,14).map(p=>
+      '<span class="injp" title="'+esc([p.r, p.until&&p.until!=='0'?'복귀 예정 '+p.until:'',
+        p.miss?p.miss+'경기 결장':''].filter(Boolean).join(' · '))+'">'+esc(shortName(p.n))+
+      '<i>'+esc(kind(p.t))+'</i></span>').join('')+'</div>';
 }
 
 function lineupBlock(G){
@@ -2262,20 +2277,26 @@ function lineupBlock(G){
     if(!F) return '<div><div style="font-weight:600;font-size:13px">'+ko+'</div>'+
       '<p class="note" style="font-size:11.5px">라인업 이력이 아직 덜 모였다. 실행할수록 채워진다.</p>'+
       injBlock(T, ko)+'</div>';
+    const basis = F.tier==='mins' ? TIERKO.mins+' · '+F.n+'라운드'
+                                  : TIERKO[F.tier]+' '+F.n+'경기';
     return '<div><div style="font-weight:600;font-size:13px;margin-bottom:4px">'+ko+
-      ' <span class="lbl">'+esc(F.f||'')+' · '+TIERKO[F.tier]+' '+F.n+'경기</span></div>'+
+      ' <span class="lbl">'+esc(F.f||'')+' · '+basis+'</span></div>'+
       lineupPitch(T, F, flip)+
       '<div style="margin-top:7px">'+injBlock(T, ko)+'</div></div>';
   };
-  const asof = SQUADS.injAsof ? '부상 정보 '+SQUADS.injAsof+' 기준' : '';
+  const asof = SQUADS.injAsof ? '결장 정보 '+SQUADS.injAsof+' 기준' : '';
   return '<hr><div class="lbl" style="margin-bottom:8px">예상 선발 — '+
       '두 시즌 라인업 이력에서, 이번 상대와 같은 급을 만났을 때 자주 낸 11명이다</div>'+
     '<div class="lugrid">'+ side(HT,FH,hk,false) + side(AT,FA,ak,true) +'</div>'+
     lineMatchup(hk, ak, FH, FA)+
     '<p class="note" style="margin:8px 0 0;font-size:11.5px">'+
       '<b>확정 라인업이 아니다.</b> 감독 발표는 보통 킥오프 1시간 전이라 베트맨 마감 뒤에 나온다. '+
-      '여기 있는 건 과거에 같은 급 상대로 자주 낸 조합이고, 결장자로 잡힌 선수는 빼고 다음 순번을 올린다. '+
-      '흐린 선수는 그 자리 출전 비중이 절반 미만이라 특히 덜 확실하다. '+esc(asof)+'</p>';
+      (SQUADS.basis==='mins'
+        ? '여기 있는 건 <b>이번 시즌 리그 출전 시간이 가장 많은 11명</b>이다. 결장자는 빼고 다음 순번을 올렸다. '+
+          '상대가 강팀이냐 약팀이냐에 따라 감독이 바꾸는 부분까지는 반영하지 못한다 — 경기별 라인업 이력이 있어야 하는데 그건 유료 자료다. '
+        : '여기 있는 건 과거에 같은 급 상대로 자주 낸 조합이고, 결장자로 잡힌 선수는 빼고 다음 순번을 올린다. ')+
+      '흐린 선수는 출전 시간이 주전의 절반이 안 돼 특히 덜 확실하다. '+
+      (SQUADS.src? '출처 '+esc(SQUADS.src)+' · ' : '')+esc(asof)+'</p>';
 }
 
 function renderAnalysis(G){

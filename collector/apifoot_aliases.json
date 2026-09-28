@@ -1,4 +1,5 @@
 {
-  "_설명": "API-Football 팀 이름 → football-data 이름. 자동 대조가 실패한 것만 여기 적는다.",
-  "_예시": "\"Wolverhampton Wanderers\": \"Wolves\""
+  "_설명": "외부 소스의 팀 이름 → football-data 이름. 자동 대조가 실패한 것만 적는다 (API-Football / Transfermarkt 공용).",
+  "Real Betis Balompié": "Betis",
+  "RCD Espanyol Barcelona": "Espanol"
 }

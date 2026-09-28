@@ -11,3 +11,4 @@ __pycache__/
 .DS_Store
 .preview/
 collector/squad_cache/
+collector/tm_cache/

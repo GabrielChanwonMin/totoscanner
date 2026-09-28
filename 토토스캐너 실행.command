@@ -18,14 +18,17 @@ printf '\n\033[1m[2/6]\033[0m 해외 컨센서스 배당\n'
 /usr/bin/python3 collect_odds.py
 
 printf '\n\033[1m[3/6]\033[0m 선수단 · 부상 · 예상 라인업\n'
-(cd collector && /usr/bin/python3 collect_squad.py) || \
-  printf '  \033[33m선수 자료는 건너뛴다\033[0m — 앱은 그대로 돈다\n'
+# 여기는 이미 collector 안이다 — 다시 cd 하면 안 된다
+if ! /usr/bin/python3 collect_squad.py; then
+  /usr/bin/python3 collect_tm.py || \
+    printf '  \033[33m선수 자료는 건너뛴다\033[0m — 앱은 그대로 돈다\n'
+fi
 
 printf '\n\033[1m[4/6]\033[0m 이번 회차 예측 기록\n'
-(cd collector && /usr/bin/python3 predict_round.py)
+/usr/bin/python3 predict_round.py
 
 printf '\n\033[1m[5/6]\033[0m 지난 회차 자동 채점\n'
-(cd collector && /usr/bin/python3 settle.py)
+/usr/bin/python3 settle.py
 
 printf '\n\033[1m[6/6]\033[0m 회차 데이터 올리기\n'
 cd "$ROOT" || exit 1

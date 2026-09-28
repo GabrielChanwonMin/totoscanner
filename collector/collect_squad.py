@@ -320,8 +320,8 @@ def main():
 
     if not AF.key():
         print("footballApiKey 가 없다 — 선수단·부상·라인업은 건너뛴다.")
-        print("  받으려면: '선수정보 키 등록.command' 를 더블클릭해라 (무료)")
-        return 0
+        print("  받으려면: '선수정보 키 등록.command' 를 더블클릭해라 (유료 요금제 필요)")
+        return 3        # 0 이 아니어야 실행 스크립트가 Transfermarkt 로 넘어간다
 
     s0 = AF.season_now()
     seasons = [s0, s0 - 1]      # 이번·지난 두 시즌 (스쿼드가 크게 안 바뀌는 구간)
@@ -344,13 +344,13 @@ def main():
         try:
             tm = sync_teams(cl, seasons)
         except SeasonLocked as e:
-            locked_note(e); return 0
+            locked_note(e); return 3
         except Budget:
             print("  예산 소진 — 다음 실행에서 이어받는다")
     tmap = tm.get("map", {})
     if not tmap:
         print("팀 연결이 아직 없다. 내일 다시 실행하면 이어서 받는다.")
-        return 0
+        return 3
 
     want, want_ids = round_teams(tmap)
     if want:
@@ -370,7 +370,7 @@ def main():
             if cl.left > 15:            # 라인업을 다 채우고도 남으면 명단을 새로 고친다
                 squads = sync_squads(cl, tmap, want, stale_ok=True)
         except SeasonLocked as e:
-            locked_note(e); return 0
+            locked_note(e); return 3
         except Budget as e:
             print("  예산 소진: %s — 다음 실행에서 이어받는다" % e)
             squads = AF.cload("player_squads.json") or {}
