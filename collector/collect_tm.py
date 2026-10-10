@@ -175,7 +175,7 @@ def main():
     except Exception:
         built = {}
 
-    done, t0 = 0, time.time()
+    done, miss, t0 = 0, 0, time.time()
     for k in keys:
         c = m[k]; div = k.split("|", 1)[0]
         if "--build" in args:
@@ -185,18 +185,23 @@ def main():
             mins = T.minutes(c["id"], c["slug"], div)
             ab = T.absences(c["id"], c["slug"])
         except Exception as e:
-            print("  %s: %s" % (k, str(e)[:70])); continue
+            miss += 1
+            print("  %s 실패: %s" % (ko.get(k) or k, str(e)[:60]))
+            # 연달아 막히면 저쪽이 속도를 조이는 것이다. 계속 두드리지 않고 물러난다.
+            if miss >= 3:
+                print("  \033[33m연속 3팀 실패 — 여기서 멈춘다.\033[0m "
+                      "받아둔 것까지로 만들고, 다음 실행에서 이어받는다.")
+                break
+            continue
+        miss = 0
         built[k] = {"sq": sq, "min": {str(a): b for a, b in mins.items()}, "ab": ab}
+        json.dump(built, open(cache_f, "w", encoding="utf-8"), ensure_ascii=False)
         done += 1
         # 한 팀마다 찍는다. 10팀마다 찍으면 1분 넘게 조용해져서 멈춘 줄 안다.
         el = time.time() - t0
         eta = (el / done) * (len(keys) - done)
         print("    %3d/%d  %-26s  남은 시간 %d분 %02d초"
               % (done, len(keys), (ko.get(k) or k)[:26], eta // 60, eta % 60), flush=True)
-        if done % 10 == 0:
-            json.dump(built, open(cache_f, "w", encoding="utf-8"), ensure_ascii=False)
-    if done:
-        json.dump(built, open(cache_f, "w", encoding="utf-8"), ensure_ascii=False)
 
     teams, withxi = {}, 0
     for k, b in built.items():
