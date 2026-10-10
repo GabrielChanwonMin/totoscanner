@@ -10,7 +10,7 @@
 다음 순번을 올린다. 상대가 강팀이냐 약팀이냐로 나누는 건 경기별 라인업 이력이
 있어야 하는데, 그건 유료 API 몫이라 여기선 못 한다.
 """
-import json, os, re, sys, datetime as dt
+import json, os, re, sys, time, datetime as dt
 import transfermarkt as T
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -163,7 +163,11 @@ def main():
     m = club_map(divs) if "--build" not in args else json.load(open(MAP, encoding="utf-8"))
 
     keys = list(m) if "--all" in args else (round_keys(m) or list(m))
-    print("대상 팀 %d개%s" % (len(keys), " (이번 회차)" if "--all" not in args else ""))
+    if "--build" not in args:
+        mins = len(keys) * 3 * T.DELAY / 60.0
+        print("대상 팀 %d개%s — 팀마다 3쪽씩 받는다. 캐시가 비어 있으면 약 %.0f분 걸린다."
+              % (len(keys), " (이번 회차)" if "--all" not in args else "", mins))
+        print("  (멈춘 게 아니다 — 남의 서버라 쪽마다 %.1f초씩 쉬어간다)" % T.DELAY)
 
     cache_f = os.path.join(T.CACHE, "_built.json")
     try:
@@ -171,7 +175,7 @@ def main():
     except Exception:
         built = {}
 
-    done = 0
+    done, t0 = 0, time.time()
     for k in keys:
         c = m[k]; div = k.split("|", 1)[0]
         if "--build" in args:
@@ -184,9 +188,13 @@ def main():
             print("  %s: %s" % (k, str(e)[:70])); continue
         built[k] = {"sq": sq, "min": {str(a): b for a, b in mins.items()}, "ab": ab}
         done += 1
+        # 한 팀마다 찍는다. 10팀마다 찍으면 1분 넘게 조용해져서 멈춘 줄 안다.
+        el = time.time() - t0
+        eta = (el / done) * (len(keys) - done)
+        print("    %3d/%d  %-26s  남은 시간 %d분 %02d초"
+              % (done, len(keys), (ko.get(k) or k)[:26], eta // 60, eta % 60), flush=True)
         if done % 10 == 0:
             json.dump(built, open(cache_f, "w", encoding="utf-8"), ensure_ascii=False)
-            print("    … %d/%d" % (done, len(keys)), flush=True)
     if done:
         json.dump(built, open(cache_f, "w", encoding="utf-8"), ensure_ascii=False)
 

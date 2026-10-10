@@ -8,18 +8,48 @@ transfermarkt.com/robots.txt 는 `User-agent: * / Allow: /` 로 전체 허용이
 
 여기서만 얻는 것: **출전정지**. API-Football 은 부상만 준다.
 """
-import json, os, re, html, time, urllib.request, urllib.error, datetime as dt
+import contextlib, json, os, re, html, time, signal, urllib.request, urllib.error, datetime as dt
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(HERE, "tm_cache")
 BASE = "https://www.transfermarkt.com/"
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/125.0 Safari/537.36")
-DELAY = 2.5          # 페이지 사이 간격 (초)
+DELAY = 1.5          # 페이지 사이 간격 (초)
+# 2.5초면 한 회차에 11분이 걸려서 멈춘 줄 안다. 1.5초여도 분당 40쪽이라
+# 큰 사이트엔 부담이 아니다. robots.txt 가 우리 쪽에 Crawl-delay 를 걸지도 않았다.
 COMP = {"E0": ("GB1", "premier-league"), "SP1": ("ES1", "laliga"),
         "I1": ("IT1", "serie-a"), "D1": ("L1", "bundesliga"), "F1": ("FR1", "ligue-1")}
 
 _last = [0.0]
+HARD = 25.0          # 요청 하나에 쓸 수 있는 전체 시간 (초)
+
+
+class Hang(Exception):
+    """서버가 연결만 잡아두고 응답을 안 줄 때."""
+
+
+@contextlib.contextmanager
+def _deadline(seconds):
+    """urlopen 의 timeout 은 '읽기 한 번'에만 걸린다.
+
+    서버가 몇 초마다 1바이트씩 흘려보내면 그 timeout 은 영원히 안 터진다 —
+    실제로 그렇게 멈췄다(연결은 ESTABLISHED, 2분 넘게 진행 없음).
+    그래서 요청 전체에 알람을 걸어 통째로 끊는다. DNS 가 늦어지는 경우도 같이 잡힌다.
+    """
+    try:
+        def boom(sig, frm):
+            raise Hang("응답 %g초 초과" % seconds)
+        old = signal.signal(signal.SIGALRM, boom)
+        signal.setitimer(signal.ITIMER_REAL, seconds)
+    except ValueError:        # 메인 스레드가 아니면 알람을 못 건다
+        yield
+        return
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, old)
 
 
 def season_now(today=None):
@@ -36,19 +66,27 @@ def fetch(path, ttl_hours=24, label=None):
         age = (time.time() - os.path.getmtime(fp)) / 3600.0
         if age < ttl_hours:
             return open(fp, encoding="utf-8").read()
-    wait = DELAY - (time.time() - _last[0])
-    if wait > 0:
-        time.sleep(wait)
     req = urllib.request.Request(BASE + path, headers={
         "User-Agent": UA, "Accept-Language": "en",
         "Accept": "text/html,application/xhtml+xml"})
-    try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            body = r.read().decode("utf-8", "replace")
-    finally:
-        _last[0] = time.time()
-    open(fp, "w", encoding="utf-8").write(body)
-    return body
+    last = None
+    for attempt in range(3):
+        wait = DELAY - (time.time() - _last[0])
+        if wait > 0:
+            time.sleep(wait)
+        try:
+            with _deadline(HARD):
+                with urllib.request.urlopen(req, timeout=20) as r:
+                    body = r.read().decode("utf-8", "replace")
+            _last[0] = time.time()
+            open(fp, "w", encoding="utf-8").write(body)
+            return body
+        except Exception as e:
+            _last[0] = time.time()
+            last = e
+            if attempt < 2:
+                time.sleep(3 * (attempt + 1))      # 조금 물러섰다 다시
+    raise last
 
 
 # ---------- 표 파싱 ----------
@@ -141,8 +179,8 @@ def absences(club_id, slug, ttl_hours=6):
     return out
 
 
-def squad(club_id, slug, season=None, ttl_hours=24 * 7):
-    """선수단 — 등번호, 세부 포지션, 사진. 이적시장 말고는 잘 안 바뀐다."""
+def squad(club_id, slug, season=None, ttl_hours=24 * 21):
+    """선수단 — 등번호, 세부 포지션, 사진. 이적시장 열릴 때 말고는 안 바뀌어서 3주 캐시."""
     season = season or season_now()
     page = fetch("%s/kader/verein/%d/saison_id/%d/plus/1" % (slug, club_id, season),
                  ttl_hours=ttl_hours)
