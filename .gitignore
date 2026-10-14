@@ -12,3 +12,4 @@ __pycache__/
 .preview/
 collector/squad_cache/
 collector/tm_cache/
+collector/odds_raw.json

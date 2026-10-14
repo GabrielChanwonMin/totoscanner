@@ -285,6 +285,7 @@ details summary:hover{color:var(--accent-ink)}
     <button data-tab="round" aria-current="true">이번 회차</button>
     <button data-tab="input">경기 입력</button>
     <button data-tab="combo">조합 추천</button>
+    <button data-tab="books">배당 비교</button>
     <button data-tab="log">성적표</button>
     <button data-tab="method">방법론 · 검증</button>
     <button onclick="window.open('guide.html','_blank')" title="용어와 지표 설명">설명서 ↗</button>
@@ -417,6 +418,8 @@ details summary:hover{color:var(--accent-ink)}
 </section>
 
 <!-- ══════════ 기록 ══════════ -->
+<section class="panel" id="p-books"><div id="booksOut"></div></section>
+
 <section class="panel" id="p-log">
   <div class="card" style="margin-bottom:14px">
     <h2>자동 채점 <span class="lbl" id="dbState">로컬 저장</span></h2>
@@ -1175,6 +1178,123 @@ function renderDetail(){
     navigator.clipboard?.writeText(t).then(()=>toast('복사: '+t), ()=>toast(t)); };
   ['adjHA','adjAA'].forEach(id=>{ $('#'+id).onchange=e=>{
     m.adj=m.adj||{}; m.adj[id==='adjHA'?'hAtt':'aAtt'] = (+e.target.value||0)/100; save(); render(); }; });
+}
+
+/* ═══════════ 배당 비교 — 어느 사이트가 이 픽에 제일 좋은 값을 주나 ═══════════
+   books.json 은 collector/build_books.py 가 만든다. 없으면 이 탭은 안내만 띄운다. */
+let BOOKS = null;
+const BK = {sel:null, lg:'ALL', pick:0, sort:'best'};
+
+async function loadBooks(){
+  try{
+    const r = await fetch('data/books.json?t='+Math.floor(Date.now()/6e5), {cache:'default'});
+    if(!r.ok) return null;
+    const d = await r.json();
+    if(d && d.matches) BOOKS = d;
+  }catch(e){}
+  return BOOKS;
+}
+
+function bkOverround(pr){ return pr.reduce((s,p)=>s+1/p, 0) - 1; }
+
+function renderBooks(){
+  const box = $('#booksOut');
+  if(!BOOKS){
+    box.innerHTML = '<div class="card"><div class="empty">배당 비교표를 불러오는 중…</div></div>';
+    loadBooks().then(d=> d ? renderBooks() : box.innerHTML =
+      '<div class="card"><div class="empty">배당 비교 자료가 아직 없다.<br>'+
+      '<span class="lbl">수집기에서 build_books.py 가 돌면 생긴다.</span></div></div>');
+    return;
+  }
+  const keys = Object.keys(BOOKS.matches);
+  const lgs = [...new Set(keys.map(k=>BOOKS.matches[k].lg))];
+  if(!BK.sel || !BOOKS.matches[BK.sel]) BK.sel = keys[0];
+
+  const chip = (v,label)=> '<button class="btn sm" aria-pressed="'+(BK.lg===v)+
+    '" data-bklg="'+v+'">'+label+'</button>';
+  const chips = chip('ALL','전체') + lgs.map(l=>chip(l, LGN(l))).join('');
+
+  const shown = keys.filter(k=> BK.lg==='ALL' || BOOKS.matches[k].lg===BK.lg)
+                    .sort((a,b)=> (BOOKS.matches[a].kick||'').localeCompare(BOOKS.matches[b].kick||''));
+  const list = shown.map(k=>{
+    const m = BOOKS.matches[k];
+    return '<button class="bkrow'+(k===BK.sel?' on':'')+'" data-bkm="'+esc(k)+'">'+
+      '<span class="lbl">'+LGN(m.lg)+' · '+(m.kick||'').slice(5,10).replace('-','/')+'</span>'+
+      '<b>'+esc(koTeam(m.lg,m.h))+' vs '+esc(koTeam(m.lg,m.a))+'</b>'+
+      '<span class="lbl">'+m.nb+'곳 비교</span></button>';
+  }).join('') || '<div class="empty">이 리그 경기가 없다.</div>';
+
+  box.innerHTML =
+    '<div class="card"><h2>배당 비교 <span class="lbl">'+keys.length+'경기 · 북메이커 '+
+      BOOKS.books.length+'곳 · '+(BOOKS.asof||'').slice(0,16).replace('T',' ')+' 기준</span></h2>'+
+    '<div class="pad"><div class="chips">'+chips+'</div>'+
+    '<div class="bkwrap"><div class="bklist">'+list+'</div><div id="bkDetail"></div></div>'+
+    '</div></div>';
+
+  $$('[data-bklg]').forEach(b=> b.onclick=()=>{ BK.lg=b.dataset.bklg; renderBooks(); });
+  $$('[data-bkm]').forEach(b=> b.onclick=()=>{ BK.sel=b.dataset.bkm; renderBooks(); });
+  renderBookDetail();
+}
+
+function renderBookDetail(){
+  const box = $('#bkDetail'); if(!box) return;
+  const m = BOOKS.matches[BK.sel];
+  if(!m){ box.innerHTML=''; return; }
+  const B = BOOKS.books, fair = m.fair.map(x=>1/x), L = ['홈 승','무','원정 승'];
+  const hk = koTeam(m.lg,m.h), ak = koTeam(m.lg,m.a);
+
+  const rows = Object.entries(m.h2h).map(([bi,pr])=>{
+    const b = B[+bi];
+    return {n:b.n, u:b.u, x:b.x, pr,
+            ev: pr.map((p,i)=> p*fair[i]-1),
+            or: bkOverround(pr)};
+  });
+  // 베트맨은 비교 기준이라 따로 세운다
+  const bm = m.bm ? {n:'베트맨 (프로토)', u:'', x:false, pr:m.bm,
+                     ev:m.bm.map((p,i)=> p*fair[i]-1), or:bkOverround(m.bm)} : null;
+
+  const i = BK.pick;
+  rows.sort((a,b)=> BK.sort==='or' ? a.or-b.or : b.pr[i]-a.pr[i]);
+  const top = Math.max(...rows.map(r=>r.pr[i]));
+
+  const pickBtn = L.map((t,j)=>'<button class="btn sm" aria-pressed="'+(j===i)+'" data-bkpick="'+j+'">'+
+    (j===0?hk+' 승':j===1?'무':ak+' 승')+' <span class="lbl">적정 '+m.fair[j].toFixed(2)+'</span></button>').join('');
+
+  const line = r=>{
+    const best = r.pr[i]>=top-1e-9;
+    const nm = r.u ? '<a href="'+esc(r.u)+'" target="_blank" rel="noopener noreferrer">'+esc(r.n)+' ↗</a>'
+                   : esc(r.n);
+    return '<tr'+(best?' class="bkbest"':'')+(r.n.startsWith('베트맨')?' class="bkbm"':'')+'>'+
+      '<td>'+nm+(r.x?' <span class="badge b-info" style="padding:1px 4px">교환소</span>':'')+'</td>'+
+      r.pr.map((p,j)=>'<td class="'+(j===i?'hl':'')+'">'+p.toFixed(2)+'</td>').join('')+
+      '<td class="'+(r.ev[i]>0?'pos':'neg')+'">'+(r.ev[i]*100>=0?'+':'')+(r.ev[i]*100).toFixed(1)+'%</td>'+
+      '<td>'+(r.or*100).toFixed(1)+'%</td></tr>';
+  };
+
+  const spread = (top/Math.min(...rows.map(r=>r.pr[i]))-1)*100;
+  box.innerHTML =
+    '<div class="bkhead"><b>'+esc(hk)+' vs '+esc(ak)+'</b> '+
+      '<span class="lbl">'+(m.kick||'').slice(0,16).replace('T',' ')+'</span></div>'+
+    '<div class="chips" style="margin:8px 0">'+pickBtn+'</div>'+
+    '<p class="note" style="margin:0 0 8px">같은 픽인데 제일 좋은 곳과 제일 나쁜 곳이 '+
+      '<b>'+spread.toFixed(1)+'%</b> 차이다. 1만원 걸면 '+
+      Math.round(top*10000).toLocaleString()+'원 대 '+
+      Math.round(Math.min(...rows.map(r=>r.pr[i]))*10000).toLocaleString()+'원.</p>'+
+    '<div class="scroll"><table class="bktbl"><thead><tr>'+
+      '<th>사이트</th><th>'+esc(hk)+'</th><th>무</th><th>'+esc(ak)+'</th>'+
+      '<th>적정 대비</th><th><button class="btn sm" id="bkSortOr">마진</button></th>'+
+      '</tr></thead><tbody>'+
+      (bm?line(bm):'')+rows.map(line).join('')+
+      '</tbody></table></div>'+
+    '<p class="note" style="margin:10px 0 0;font-size:11.5px">'+
+      '<b>적정배당</b>은 북메이커 '+m.nb+'곳의 평균에서 마진을 뺀 값이다. '+
+      '그래서 "적정 대비"가 0% 근처인 게 정상이고, <b>+%가 크다고 돈 되는 픽이라는 뜻은 아니다</b> — '+
+      '그 사이트가 시장 평균보다 좋은 값을 준다는 뜻이다. '+
+      '<b>마진</b>이 낮을수록 손님에게 유리하다 (교환소가 보통 1%대, 베트맨은 13% 안팎).'+
+      (m.bm?'':' 베트맨 배당은 공시되면 맨 윗줄에 같이 나온다.')+'</p>';
+
+  $$('[data-bkpick]').forEach(b=> b.onclick=()=>{ BK.pick=+b.dataset.bkpick; renderBookDetail(); });
+  const so = $('#bkSortOr'); if(so) so.onclick=()=>{ BK.sort = BK.sort==='or'?'best':'or'; renderBookDetail(); };
 }
 
 function renderBias(){
@@ -2554,6 +2674,7 @@ function go(tab){
   $$('nav button').forEach(b=> b.setAttribute('aria-current', String(b.dataset.tab===tab)));
   $$('.panel').forEach(p=> p.classList.toggle('on', p.id==='p-'+tab));
   if(tab==='combo'){ renderComboLg(); runCombo(); }
+  if(tab==='books') renderBooks();
   if(tab==='log') renderLog();
   if(tab==='admin') renderAdmin();
   window.scrollTo({top:0,behavior:'instant'});
@@ -2766,6 +2887,23 @@ async function boot(){
 .lugrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:620px){ .lugrid{grid-template-columns:1fr;gap:18px}
   .lup b{font-size:9.5px} .lup.lu-tight b{font-size:9px} }
+
+/* 배당 비교 */
+.bkwrap{display:grid;grid-template-columns:260px minmax(0,1fr);gap:14px;margin-top:10px}
+/* 그리드 칸은 기본이 min-width:auto 라, 안의 표가 넓으면 칸을 밀어내 가로 스크롤이 생긴다 */
+.bkwrap>*{min-width:0}
+.bklist{display:flex;flex-direction:column;gap:4px;max-height:560px;overflow:auto}
+.bkrow{display:flex;flex-direction:column;gap:1px;text-align:left;padding:7px 9px;
+  border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:pointer;font:inherit}
+.bkrow b{font-size:12.5px}
+.bkrow:hover{border-color:var(--accent)}
+.bkrow.on{border-color:var(--accent);background:var(--surface2)}
+.bkhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.bktbl td,.bktbl th{white-space:nowrap}
+.bktbl td.hl{font-weight:700}
+tr.bkbest td{background:color-mix(in srgb,var(--good) 12%,transparent)}
+tr.bkbm td{background:color-mix(in srgb,var(--accent) 10%,transparent);font-weight:600}
+@media(max-width:760px){ .bkwrap{grid-template-columns:minmax(0,1fr)} .bklist{max-height:220px} }
 </style>
 
 </body>

@@ -17,6 +17,9 @@ fi
 printf '\n\033[1m[2/6]\033[0m 해외 컨센서스 배당\n'
 /usr/bin/python3 collect_odds.py
 
+printf '  배당 비교표 만드는 중…\n'
+/usr/bin/python3 build_books.py || printf '  \033[33m배당 비교표는 건너뛴다\033[0m\n'
+
 printf '\n\033[1m[3/6]\033[0m 선수단 · 부상 · 예상 라인업\n'
 # 여기는 이미 collector 안이다 — 다시 cd 하면 안 된다
 if ! /usr/bin/python3 collect_squad.py; then

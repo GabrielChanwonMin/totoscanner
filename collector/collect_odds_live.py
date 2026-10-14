@@ -23,6 +23,10 @@ RATINGS = os.path.join(os.path.dirname(HERE), "engine", "ratings.json")
 SPORTS = {"soccer_epl": "E0", "soccer_spain_la_liga": "SP1", "soccer_italy_serie_a": "I1",
           "soccer_germany_bundesliga": "D1", "soccer_france_ligue_one": "F1"}
 BASE = "https://api.the-odds-api.com/v4"
+RAW = os.path.join(HERE, "odds_raw.json")
+# 비용 = 지역수 x 마켓수. eu 만 쓰면 북메이커가 20곳쯤, eu+uk 면 42곳쯤 온다.
+# 배당 비교 탭이 이 목록을 쓰기 때문에 넓혀뒀다. 아끼려면 --eu 를 붙인다.
+REGIONS = "eu,uk"
 
 # 팀 이름을 리그별 후보 목록에 대고 점수로 맞춘다.
 # 단순 정규화는 위험하다 — "Manchester United" 와 "Manchester City" 가 같아져 버린다.
@@ -120,7 +124,7 @@ def load_key():
 def fetch(sport, key, markets="h2h,totals"):
     """요청 1회 비용 = 지역 수 x 마켓 수. eu(1) x h2h,totals(2) = 2회.
     5대 리그면 한 번 돌릴 때 10회 소모된다."""
-    url = (f"{BASE}/sports/{sport}/odds/?apiKey={key}&regions=eu&markets={markets}"
+    url = (f"{BASE}/sports/{sport}/odds/?apiKey={key}&regions={REGIONS}&markets={markets}"
            f"&oddsFormat=decimal&dateFormat=iso")
     req = urllib.request.Request(url, headers={"User-Agent": "totoscanner/1.0"})
     with urllib.request.urlopen(req, timeout=30) as r:
@@ -160,7 +164,10 @@ def build_index(app):
 
 
 def main():
+    global REGIONS
     check = "--check" in sys.argv
+    if "--eu" in sys.argv:
+        REGIONS = "eu"
     # --cheap : 승무패만 받아 소모를 절반(5회)으로 줄인다.
     #           언더오버 배당은 못 받지만, 같은 경기 승무패에서 파생되므로 등급은 나온다.
     markets = "h2h" if "--cheap" in sys.argv else "h2h,totals"
@@ -183,6 +190,7 @@ def main():
             ours.setdefault(m["league"], []).append(m)
 
     hit = 0; miss = []; remain = None; used = None
+    raw = {}
     for sport, lg in SPORTS.items():
         if lg not in ours:
             continue
@@ -197,6 +205,7 @@ def main():
         except Exception as e:
             print(f"  {lg}: 요청 실패 {e}"); continue
 
+        raw[lg] = events
         # 이벤트를 우리 경기에 붙인다
         for ev in events:
             h, a = ev.get("home_team"), ev.get("away_team")
@@ -264,6 +273,10 @@ def main():
 
     if check:
         print("  --check 모드라 파일은 고치지 않았다."); return 0
+    if raw:
+        json.dump({"at": dt.datetime.now().isoformat(timespec="seconds"),
+                   "regions": REGIONS, "leagues": raw},
+                  open(RAW, "w", encoding="utf-8"), ensure_ascii=False)
     app["refSource"] = "the-odds-api (live)"
     app["refFetchedAt"] = dt.datetime.now().isoformat(timespec="seconds")
     json.dump(app, open(SRC, "w"), ensure_ascii=True)
