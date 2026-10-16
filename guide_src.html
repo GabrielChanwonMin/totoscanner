@@ -1,36 +1,42 @@
 <title>토토스캐너 사용 설명서</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
 :root{
-  --bg:#EDEFF2; --surface:#FFFFFF; --surface2:#F5F7F9;
-  --ink:#0D1117; --ink2:#2B343D; --muted:#5A6672; --faint:#8B97A3;
-  --line:#D7DBE0; --line2:#E6E9ED;
-  --accent:#2E43C9; --accent-soft:#E7EAFB; --accent-ink:#2E43C9;
-  --good:#0B7A46; --good-soft:#E2F2E9; --warn:#A66A00; --warn-soft:#FAF0DC;
-  --bad:#9B2C2C; --bad-soft:#F7E7E7; --stripe:rgba(13,17,23,.022);
-  --shadow:0 1px 2px rgba(13,17,23,.06),0 8px 24px -18px rgba(13,17,23,.35);
-  --sans:"IBM Plex Sans KR",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --bg:#FFFFFF; --surface:#FFFFFF; --surface2:#F7F7F7;
+  --ink:#4B4B4B; --ink2:#4B4B4B; --muted:#777777; --faint:#8A8A8A;
+  --line:#E5E5E5; --line2:#EFEFEF;
+  --accent:#1CB0F6; --accent-soft:#DDF4FF; --accent-ink:#1899D6; --accent-edge:#84D8FF;
+  --good:#58A700; --good-soft:#D7FFB8; --good-edge:#A5ED6E;
+  --warn:#CC7A00; --warn-soft:#FFF1D6; --warn-edge:#FFD27A;
+  --bad:#EA2B2B; --bad-soft:#FFDFE0; --bad-edge:#FFB3B3; --stripe:rgba(0,0,0,.018);
+  --green:#58CC02; --green-lip:#58A700;
+  --shadow:none;
+  --sans:"Nunito","Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;
+  --mono:"Nunito","Pretendard Variable",Pretendard,-apple-system,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0B0F12; --surface:#141A20; --surface2:#1A2128;
-  --ink:#E7ECF1; --ink2:#C4CDD6; --muted:#8A96A2; --faint:#66727E;
-  --line:#242C34; --line2:#1E252C;
-  --accent:#8B9BFF; --accent-soft:#1B2340; --accent-ink:#A6B2FF;
-  --good:#3FC783; --good-soft:#102A1E; --warn:#DDA23A; --warn-soft:#2C2314;
-  --bad:#E37070; --bad-soft:#301A1A; --stripe:rgba(255,255,255,.022);
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -18px rgba(0,0,0,.8);
+  --bg:#131F24; --surface:#131F24; --surface2:#1B2B32;
+  --ink:#F1F7FB; --ink2:#DCE6EC; --muted:#A5B7C0; --faint:#7F95A0;
+  --line:#37464F; --line2:#26363E;
+  --accent:#1CB0F6; --accent-soft:#16364A; --accent-ink:#49C0F8; --accent-edge:#1F6E94;
+  --good:#93D333; --good-soft:#1F3A14; --good-edge:#3E6B1C;
+  --warn:#FFB84D; --warn-soft:#3A2C10; --warn-edge:#6B5020;
+  --bad:#FF7A7A; --bad-soft:#3D1F22; --bad-edge:#6E2E33; --stripe:rgba(255,255,255,.02);
+  --shadow:none;
 }}
 :root[data-theme="dark"]{
-  --bg:#0B0F12; --surface:#141A20; --surface2:#1A2128;
-  --ink:#E7ECF1; --ink2:#C4CDD6; --muted:#8A96A2; --faint:#66727E;
-  --line:#242C34; --line2:#1E252C;
-  --accent:#8B9BFF; --accent-soft:#1B2340; --accent-ink:#A6B2FF;
-  --good:#3FC783; --good-soft:#102A1E; --warn:#DDA23A; --warn-soft:#2C2314;
-  --bad:#E37070; --bad-soft:#301A1A; --stripe:rgba(255,255,255,.022);
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -18px rgba(0,0,0,.8);
+  --bg:#131F24; --surface:#131F24; --surface2:#1B2B32;
+  --ink:#F1F7FB; --ink2:#DCE6EC; --muted:#A5B7C0; --faint:#7F95A0;
+  --line:#37464F; --line2:#26363E;
+  --accent:#1CB0F6; --accent-soft:#16364A; --accent-ink:#49C0F8; --accent-edge:#1F6E94;
+  --good:#93D333; --good-soft:#1F3A14; --good-edge:#3E6B1C;
+  --warn:#FFB84D; --warn-soft:#3A2C10; --warn-edge:#6B5020;
+  --bad:#FF7A7A; --bad-soft:#3D1F22; --bad-edge:#6E2E33; --stripe:rgba(255,255,255,.02);
+  --shadow:none;
+
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
@@ -100,6 +106,20 @@ a{color:var(--accent-ink)}
 .kv:last-child{border-bottom:0}
 .kv b{font-family:var(--mono);font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* 디자인 레이어 — 앱 본체와 같은 모양 */
+body{font-weight:500}
+h1,h2,h3{font-weight:900}
+b,strong{font-weight:800}
+h2 .n{font-family:var(--sans);font-weight:900;color:#fff;background:var(--green);
+  border:0;border-radius:999px;padding:2px 10px;box-shadow:0 3px 0 var(--green-lip)}
+.card{border:2px solid var(--line);border-radius:16px;box-shadow:none}
+.card.warn{border-color:var(--warn-edge);background:var(--warn-soft)}
+.card.bad{border-color:var(--bad-edge);background:var(--bad-soft)}
+th{font-weight:900}
+th,td{border-bottom:2px solid var(--line2)}
+.badge{font-family:var(--sans);font-weight:900;border-radius:999px;border-width:2px}
+a{color:var(--accent-ink);font-weight:700}
 </style>
 
 <header>

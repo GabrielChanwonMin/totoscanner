@@ -10,40 +10,46 @@
 <title>토토스캐너</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <script src="config.js"></script>
 </head>
 <body>
 <style>
 :root{
-  --bg:#EDEFF2; --surface:#FFFFFF; --surface2:#F5F7F9; --raise:#FFFFFF;
-  --ink:#0D1117; --ink2:#2B343D; --muted:#5A6672; --faint:#8B97A3;
-  --line:#D7DBE0; --line2:#E6E9ED;
-  --accent:#2E43C9; --accent-soft:#E7EAFB; --accent-ink:#2E43C9;
-  --good:#0B7A46; --good-soft:#E2F2E9; --warn:#A66A00; --warn-soft:#FAF0DC;
-  --bad:#9B2C2C; --bad-soft:#F7E7E7; --stripe:rgba(13,17,23,.022);
-  --shadow:0 1px 2px rgba(13,17,23,.06),0 8px 24px -18px rgba(13,17,23,.35);
-  --r:5px;
-  --sans:"IBM Plex Sans KR",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --bg:#FFFFFF; --surface:#FFFFFF; --surface2:#F7F7F7; --raise:#FFFFFF;
+  --ink:#4B4B4B; --ink2:#4B4B4B; --muted:#777777; --faint:#8A8A8A;
+  --line:#E5E5E5; --line2:#EFEFEF;
+  --accent:#1CB0F6; --accent-soft:#DDF4FF; --accent-ink:#1899D6; --accent-edge:#84D8FF;
+  --good:#58A700; --good-soft:#D7FFB8; --good-edge:#A5ED6E;
+  --warn:#CC7A00; --warn-soft:#FFF1D6; --warn-edge:#FFD27A;
+  --bad:#EA2B2B; --bad-soft:#FFDFE0; --bad-edge:#FFB3B3; --stripe:rgba(0,0,0,.018);
+  --green:#58CC02; --green-lip:#58A700; --blue:#1CB0F6; --blue-lip:#1899D6;
+  --red:#FF4B4B; --red-lip:#EA2B2B; --bee:#FFC800; --fox:#FF9600; --beetle:#CE82FF;
+  --shadow:none;
+  --r:16px; --r-ctl:12px;
+  --sans:"Nunito","Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"Nunito","Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0B0F12; --surface:#141A20; --surface2:#1A2128; --raise:#1D242B;
-  --ink:#E7ECF1; --ink2:#C4CDD6; --muted:#8A96A2; --faint:#66727E;
-  --line:#242C34; --line2:#1E252C;
-  --accent:#8B9BFF; --accent-soft:#1B2340; --accent-ink:#A6B2FF;
-  --good:#3FC783; --good-soft:#102A1E; --warn:#DDA23A; --warn-soft:#2C2314;
-  --bad:#E37070; --bad-soft:#301A1A; --stripe:rgba(255,255,255,.022);
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -18px rgba(0,0,0,.8);
+  --bg:#131F24; --surface:#131F24; --surface2:#1B2B32; --raise:#202F36;
+  --ink:#F1F7FB; --ink2:#DCE6EC; --muted:#A5B7C0; --faint:#7F95A0;
+  --line:#37464F; --line2:#26363E;
+  --accent:#1CB0F6; --accent-soft:#16364A; --accent-ink:#49C0F8; --accent-edge:#1F6E94;
+  --good:#93D333; --good-soft:#1F3A14; --good-edge:#3E6B1C;
+  --warn:#FFB84D; --warn-soft:#3A2C10; --warn-edge:#6B5020;
+  --bad:#FF7A7A; --bad-soft:#3D1F22; --bad-edge:#6E2E33; --stripe:rgba(255,255,255,.02);
+  --shadow:none;
 }}
 :root[data-theme="dark"]{
-  --bg:#0B0F12; --surface:#141A20; --surface2:#1A2128; --raise:#1D242B;
-  --ink:#E7ECF1; --ink2:#C4CDD6; --muted:#8A96A2; --faint:#66727E;
-  --line:#242C34; --line2:#1E252C;
-  --accent:#8B9BFF; --accent-soft:#1B2340; --accent-ink:#A6B2FF;
-  --good:#3FC783; --good-soft:#102A1E; --warn:#DDA23A; --warn-soft:#2C2314;
-  --bad:#E37070; --bad-soft:#301A1A; --stripe:rgba(255,255,255,.022);
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -18px rgba(0,0,0,.8);
+  --bg:#131F24; --surface:#131F24; --surface2:#1B2B32; --raise:#202F36;
+  --ink:#F1F7FB; --ink2:#DCE6EC; --muted:#A5B7C0; --faint:#7F95A0;
+  --line:#37464F; --line2:#26363E;
+  --accent:#1CB0F6; --accent-soft:#16364A; --accent-ink:#49C0F8; --accent-edge:#1F6E94;
+  --good:#93D333; --good-soft:#1F3A14; --good-edge:#3E6B1C;
+  --warn:#FFB84D; --warn-soft:#3A2C10; --warn-edge:#6B5020;
+  --bad:#FF7A7A; --bad-soft:#3D1F22; --bad-edge:#6E2E33; --stripe:rgba(255,255,255,.02);
+  --shadow:none;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-weight:400;
@@ -233,6 +239,111 @@ details summary:hover{color:var(--accent-ink)}
   padding:9px;cursor:pointer;color:var(--muted);font-weight:500;font-size:13px}
 #gate .tabs button[aria-pressed="true"]{color:var(--accent-ink);border-bottom-color:var(--accent);font-weight:600}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* ═══════════ 디자인 레이어 — 둥글고 굵고, 눌리는 느낌 ═══════════
+   2px 외곽선이 그림자를 대신하고, 버튼엔 같은 색 진한 쪽의 '턱'이 붙는다.
+   누르면 턱 높이만큼 내려앉는다. 로직은 건드리지 않고 겉모습만 바꾼다. */
+body{font-size:15px;font-weight:500;color:var(--ink);letter-spacing:-.005em}
+h1,h2,h3{font-weight:800;letter-spacing:-.01em}
+b,strong{font-weight:800}
+
+/* 헤더 */
+header{border-bottom:2px solid var(--line)}
+.brand b{font-size:24px;font-weight:900;color:var(--green);letter-spacing:-.03em}
+.brand .tag{font-family:var(--sans);font-size:11px;font-weight:800;letter-spacing:.06em;
+  color:var(--accent-ink);background:var(--accent-soft);border:2px solid var(--accent-edge);
+  border-radius:999px;padding:2px 9px}
+.meta .m span:last-child{font-family:var(--sans);font-size:18px;font-weight:900;color:var(--ink)}
+.mow{height:10px;gap:4px;margin-top:12px}
+.mow i{border-radius:999px;height:10px}
+.mow i:nth-child(odd){background:var(--green);box-shadow:inset 0 3px 0 rgba(255,255,255,.28)}
+.mow i:nth-child(even){background:var(--line)}
+
+/* 탭 */
+nav{gap:6px;padding-top:10px;padding-bottom:10px}
+nav button{font-weight:800;font-size:14px;color:var(--muted);border:2px solid transparent;
+  border-radius:var(--r-ctl);padding:9px 14px}
+nav button:hover{background:var(--surface2)}
+nav button[aria-current="true"]{color:var(--accent);background:var(--accent-soft);
+  border-color:var(--accent-edge);font-weight:900}
+
+/* 카드 */
+.card{border:2px solid var(--line);border-radius:var(--r);box-shadow:none}
+.card>h2{font-size:17px;font-weight:900;border-bottom:2px solid var(--line2);padding:14px 18px;flex-wrap:wrap}
+/* 버튼이 굵어져서 한 줄에 안 들어가면 칸이 밀려 가로 스크롤이 생긴다 — 줄바꿈 + 칸 줄어들기 허용 */
+.cols>*{min-width:0}
+
+/* 라벨·메모 */
+.lbl{font-family:var(--sans);font-weight:800;letter-spacing:.05em;font-size:11px}
+.note{font-size:13px}
+.note b{font-weight:800}
+.empty{font-weight:700;color:var(--muted)}
+
+/* 버튼 — 회색 외곽 + 턱 */
+.btn{background:var(--surface);border:2px solid var(--line);border-radius:var(--r-ctl);
+  padding:8px 14px;font-weight:800;font-size:13px;color:var(--ink2);
+  box-shadow:0 2px 0 var(--line);transition:transform .15s,box-shadow .15s,background .15s}
+.btn:hover{border-color:var(--line);color:var(--ink2);background:var(--surface2)}
+.btn:active{transform:translateY(2px);box-shadow:0 0 0 var(--line)}
+.btn.sm{padding:6px 11px;font-size:12.5px}
+.btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent-edge);
+  color:var(--accent);box-shadow:0 2px 0 var(--accent-edge)}
+/* 주 버튼 — 초록 + 진한 초록 턱 */
+.btn.pri{background:var(--green);border-color:var(--green);color:#fff;font-weight:900;
+  letter-spacing:.04em;text-transform:uppercase;box-shadow:0 4px 0 var(--green-lip)}
+.btn.pri:hover{background:#61D90A;border-color:#61D90A;color:#fff}
+.btn.pri:active{transform:translateY(4px);box-shadow:0 0 0 var(--green-lip)}
+.btn:disabled,.btn[disabled]{background:var(--line);border-color:var(--line);color:#AFAFAF;
+  box-shadow:none;transform:none;cursor:default}
+
+/* 입력 */
+input,select,textarea{background:var(--surface2);border:2px solid var(--line);
+  border-radius:var(--r-ctl);padding:10px 12px;font-size:14px;font-weight:600}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+
+/* 배지 — 알약 모양, 부드러운 바탕 + 진한 글씨 */
+.badge{font-family:var(--sans);font-size:11px;font-weight:900;letter-spacing:.02em;
+  padding:3px 9px;border-radius:999px;border:2px solid}
+.b-rec{color:#fff;background:var(--green);border-color:var(--green-lip)}
+.b-watch{color:var(--warn);background:var(--warn-soft);border-color:var(--warn-edge)}
+.b-info{color:var(--muted);background:var(--surface2);border-color:var(--line)}
+.b-bad{color:var(--bad);background:var(--bad-soft);border-color:var(--bad-edge)}
+.b-flag{color:var(--accent-ink);background:var(--accent-soft);border-color:var(--accent-edge)}
+
+/* 회차 목록 */
+.row{border-bottom:2px solid var(--line2)}
+.row:hover{background:var(--surface2)}
+.row[aria-selected="true"]{background:var(--accent-soft);box-shadow:inset 4px 0 0 var(--accent)}
+.no{font-family:var(--sans);font-weight:900;border:2px solid var(--line);border-radius:10px;
+  background:var(--surface);color:var(--muted)}
+.tm .vs{font-weight:800;font-size:15px}
+.tm .sub span{font-family:var(--sans);font-weight:700}
+.cell{border:2px solid var(--line);border-radius:var(--r-ctl);background:var(--surface);
+  box-shadow:0 2px 0 var(--line)}
+.cell small{font-family:var(--sans);font-weight:800}
+.cell.best{border-color:var(--good-edge);background:var(--good-soft);box-shadow:0 2px 0 var(--good-edge)}
+.cell.best b{font-weight:900;color:var(--good)}
+.mkts{border-bottom:2px solid var(--line)}
+
+/* 표 */
+th,td{font-family:var(--sans);font-weight:600}
+thead th{font-weight:900;letter-spacing:.05em;color:var(--faint);border-bottom:2px solid var(--line)}
+td.pos,.cell i.pos{color:var(--good);font-weight:900}
+tr.hl td{background:var(--accent-soft);font-weight:800}
+.kv{font-weight:600}
+
+/* 로그인 */
+#gate .box{border:2px solid var(--line);border-radius:var(--r);padding:32px 28px}
+#gate .tabs{border-bottom:2px solid var(--line)}
+#gate .msg{border-radius:var(--r-ctl);font-weight:700}
+#gate .msg.err{background:var(--bad-soft);color:var(--bad);border:2px solid var(--bad-edge)}
+
+/* 토스트 */
+.toast{border-radius:var(--r-ctl);font-weight:800;padding:11px 18px}
+
+@media (prefers-reduced-motion:reduce){
+  .btn,.btn:active,.btn.pri:active{transition:none;transform:none}
+}
+
 /* 좁은 화면: 배당을 아래 줄로 내려 팀명에 폭을 준다 (반드시 스타일시트 최후단) */
 @media(max-width:560px){
   .row{grid-template-columns:auto 1fr;gap:7px 10px;padding:10px 12px}
@@ -2406,7 +2517,8 @@ function lineupBlock(G){
   };
   const asof = SQUADS.injAsof ? '결장 정보 '+SQUADS.injAsof+' 기준' : '';
   return '<hr><div class="lbl" style="margin-bottom:8px">예상 선발 — '+
-      '두 시즌 라인업 이력에서, 이번 상대와 같은 급을 만났을 때 자주 낸 11명이다</div>'+
+      (SQUADS.basis==='mins' ? '이번 시즌 리그 출전 시간이 가장 많은 11명 (결장자 제외)'
+                             : '두 시즌 라인업 이력에서, 이번 상대와 같은 급을 만났을 때 자주 낸 11명')+'</div>'+
     '<div class="lugrid">'+ side(HT,FH,hk,false) + side(AT,FA,ak,true) +'</div>'+
     lineMatchup(hk, ak, FH, FA)+
     '<p class="note" style="margin:8px 0 0;font-size:11.5px">'+
@@ -2863,16 +2975,16 @@ async function boot(){
 @media(max-width:760px){ .calibwrap{grid-template-columns:1fr!important} }
 
 /* 예상 선발 그림 */
-.lupitch{position:relative;aspect-ratio:3/4;background:var(--surface2);
-  border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.lupitch .lu-mid{position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line)}
+.lupitch{position:relative;aspect-ratio:3/4;background:var(--good-soft);
+  border:2px solid var(--good-edge);border-radius:var(--r);overflow:hidden}
+.lupitch .lu-mid{position:absolute;left:0;right:0;top:50%;height:2px;background:var(--good-edge)}
 .lupitch .lu-mid:after{content:'';position:absolute;left:50%;top:50%;width:52px;height:52px;
-  margin:-26px 0 0 -26px;border:1px solid var(--line);border-radius:50%}
+  margin:-26px 0 0 -26px;border:2px solid var(--good-edge);border-radius:50%}
 .lup{position:absolute;transform:translate(-50%,-50%);width:20%;text-align:center;line-height:1}
 .lup img,.lup .lu-noimg{display:block;width:62%;margin:0 auto;aspect-ratio:1;border-radius:50%;
-  object-fit:cover;background:var(--surface);border:1.5px solid var(--accent);
+  object-fit:cover;background:var(--surface);border:2.5px solid #fff;box-shadow:0 2px 0 var(--good-edge);
   font-style:normal;font-size:8.5px;line-height:2.5;color:var(--muted)}
-.lup b{display:block;margin-top:2px;font-size:8.5px;font-weight:600;letter-spacing:-.2px;
+.lup b{display:block;margin-top:3px;font-size:9px;font-weight:900;letter-spacing:-.2px;color:var(--ink);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lup.lu-tight b{font-size:7.5px;letter-spacing:-.4px}
 .lup.lu-soft{opacity:.5}
@@ -2880,9 +2992,9 @@ async function boot(){
 .lulist{margin:10px 0 0;padding-left:16px;font-size:12px;color:var(--muted)}
 .lulist li{margin:2px 0}
 .injwrap{display:flex;flex-wrap:wrap;gap:4px}
-.injp{display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:2px 6px;
-  border-radius:4px;background:var(--surface2);border:1px solid var(--line)}
-.injp i{font-style:normal;font-size:9.5px;color:var(--bad)}
+.injp{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;padding:3px 10px;
+  border-radius:999px;background:var(--surface);border:2px solid var(--line)}
+.injp i{font-style:normal;font-size:10.5px;font-weight:900;color:var(--bad)}
 /* 폰에서는 두 팀을 위아래로 — 나란히 놓으면 이름이 다 잘린다 */
 .lugrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:620px){ .lugrid{grid-template-columns:1fr;gap:18px}
@@ -2893,11 +3005,12 @@ async function boot(){
 /* 그리드 칸은 기본이 min-width:auto 라, 안의 표가 넓으면 칸을 밀어내 가로 스크롤이 생긴다 */
 .bkwrap>*{min-width:0}
 .bklist{display:flex;flex-direction:column;gap:4px;max-height:560px;overflow:auto}
-.bkrow{display:flex;flex-direction:column;gap:1px;text-align:left;padding:7px 9px;
-  border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:pointer;font:inherit}
-.bkrow b{font-size:12.5px}
-.bkrow:hover{border-color:var(--accent)}
-.bkrow.on{border-color:var(--accent);background:var(--surface2)}
+.bkrow{display:flex;flex-direction:column;gap:1px;text-align:left;padding:9px 11px;
+  border:2px solid var(--line);border-radius:var(--r-ctl);background:var(--surface);cursor:pointer;font:inherit;
+  box-shadow:0 2px 0 var(--line)}
+.bkrow b{font-size:13.5px;font-weight:800}
+.bkrow:hover{background:var(--surface2)}
+.bkrow.on{border-color:var(--accent-edge);background:var(--accent-soft);box-shadow:0 2px 0 var(--accent-edge)}
 .bkhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .bktbl td,.bktbl th{white-space:nowrap}
 .bktbl td.hl{font-weight:700}
