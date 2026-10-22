@@ -135,7 +135,7 @@ else
   if git push -q 2>/dev/null; then
     printf '\033[32m푸시 완료 — 1~2분 뒤 사이트에 로그인 화면이 뜬다.\033[0m\n'
   else
-    printf '\033[33m푸시 실패.\033[0m 터미널에서: cd ~/Desktop/토토스캐너 && git push\n'
+    printf '\033[33m푸시 실패.\033[0m 터미널에서: cd ~/Developer/"2 자본이 돈버는 앱"/totoscanner && git push\n'
   fi
 fi
 printf '\n이 창은 닫아도 된다.\n'

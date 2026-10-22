@@ -26,7 +26,7 @@ engine/               Dixon-Coles 학습 + 백테스트  ← 시즌 중 가끔 �
 > 파일을 **우클릭 › 열기** 로 한 번만 열어주면 그 다음부터는 그냥 열린다.
 
 특정 회차를 찍고 싶으면 터미널에서:
-`cd ~/Desktop/토토스캐너/collector && python3 collect_betman.py 260109`
+`cd ~/Developer/"2 자본이 돈버는 앱"/totoscanner/collector && python3 collect_betman.py 260109`
 
 ### 해외 컨센서스 배당
 **football-data.co.uk fixtures.csv**(무료)에서 가져온다. 백테스트에 쓴 것과 같은 소스·같은 컬럼이라
@@ -82,7 +82,7 @@ engine/               Dixon-Coles 학습 + 백테스트  ← 시즌 중 가끔 �
 JS 와 갈라지면 기록과 화면이 달라지므로 대조기를 뒀다.
 
 ```bash
-cd ~/Desktop/토토스캐너 && python3 engine/parity_check.py
+cd ~/Developer/"2 자본이 돈버는 앱"/totoscanner && python3 engine/parity_check.py
 ```
 
 엔진을 손댔으면 반드시 돌려라. 실제로 이 대조기가 `ratings.json` 이 앱과
@@ -104,7 +104,7 @@ cd ~/Desktop/토토스캐너 && python3 engine/parity_check.py
 레이팅은 학습한 날짜 기준으로 고정돼 있다. 오래되면 실행 창이 알려준다.
 
 ```bash
-cd ~/Desktop/토토스캐너/engine && python3 refresh_ratings.py
+cd ~/Developer/"2 자본이 돈버는 앱"/totoscanner/engine && python3 refresh_ratings.py
 ```
 
 최신 경기 결과를 받아 Dixon-Coles 를 다시 맞춘다. 그 다음 Claude Code 에:
